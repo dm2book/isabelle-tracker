@@ -1,0 +1,18 @@
+# Hourly push reminders (Vercel Hobby only allows daily crons).
+# Add repository secrets APP_URL (e.g. https://your-app.vercel.app) and CRON_SECRET.
+name: Hourly reminders
+on:
+  schedule:
+    - cron: "5 * * * *"
+  workflow_dispatch:
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call dispatcher
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then echo "Secrets not set, skipping"; exit 0; fi
+          curl -fsS -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/dispatch"
