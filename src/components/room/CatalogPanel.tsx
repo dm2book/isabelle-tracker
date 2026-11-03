@@ -30,10 +30,10 @@ export function CatalogPanel({ onPick }: { onPick: (item: ItemDef) => void }) {
   const list = useMemo(() => {
     const nq = normalize(q.trim());
     return ITEMS.filter((i) => {
-      if (cat === "fav" && !favorites.includes(i.id)) return false;
-      if (cat !== "fav" && cat !== "all" && i.cat !== cat) return false;
-      if (!nq) return true;
-      return normalize(`${i.name.fr} ${i.name.en} ${i.tags}`).includes(nq);
+      // A search looks through the whole catalog; categories only filter when nothing is typed.
+      if (nq) return normalize(`${i.name.fr} ${i.name.en} ${i.tags}`).includes(nq);
+      if (cat === "fav") return favorites.includes(i.id);
+      return cat === "all" || i.cat === cat;
     }).sort((a, b) => {
       const sa = season && a.season === season.id ? -1 : 0;
       const sb = season && b.season === season.id ? -1 : 0;

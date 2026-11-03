@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useT } from "@/lib/i18n/use";
@@ -22,11 +22,17 @@ export function Sheet({ open, onClose, title, children, footer, wide, variant = 
   const panel = useRef<HTMLDivElement>(null);
   const lastFocus = useRef<HTMLElement | null>(null);
 
+  // Keep the latest onClose without re-running the open/close effect (parents often pass inline functions).
+  const closeRef = useRef(onClose);
+  useLayoutEffect(() => {
+    closeRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!open) return;
     lastFocus.current = document.activeElement as HTMLElement;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") closeRef.current();
       if (e.key === "Tab" && panel.current) {
         const f = panel.current.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
         if (!f.length) return;
@@ -44,16 +50,19 @@ export function Sheet({ open, onClose, title, children, footer, wide, variant = 
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    setTimeout(() => {
+    const focusTimer = setTimeout(() => {
+      // Never steal focus from a field the person is already using.
+      if (panel.current?.contains(document.activeElement)) return;
       const target = panel.current?.querySelector<HTMLElement>("[data-autofocus], input, textarea, select") ?? panel.current;
       target?.focus();
     }, 60);
     return () => {
+      clearTimeout(focusTimer);
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
       lastFocus.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (typeof document === "undefined") return null;
   const center = variant === "center";
