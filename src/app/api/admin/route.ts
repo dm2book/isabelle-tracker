@@ -6,6 +6,7 @@ import { encryptCode } from "@/lib/server/crypto";
 import { getAppSettings, saveAppSettings } from "@/lib/server/settings";
 import { sendPush } from "@/lib/server/push";
 import { translate } from "@/lib/i18n";
+import { createInvitation, listInvitations, revokeInvitation } from "@/lib/server/invitations";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +47,7 @@ async function recipients() {
   return users.map((u) => ({ id: u.id, email: u.email ?? "", displayName: profiles?.find((p) => p.id === u.id)?.display_name ?? u.email ?? "" }));
 }
 
-async function handle(s: Session, op: string, p: unknown) {
+async function handle(s: Session, op: string, p: unknown, origin: string) {
   const db = serviceClient();
   switch (op) {
     case "overview": {
@@ -68,6 +69,8 @@ async function handle(s: Session, op: string, p: unknown) {
         audit: auditLog.data ?? [],
         stats: { heartsThisWeek: hearts.count ?? 0 },
         encryptionReady: env.rewardKey.length >= 32,
+        invitations: await listInvitations(),
+        invitableEmails: env.allowedEmails,
       };
     }
     case "gift.send": {
@@ -125,6 +128,19 @@ async function handle(s: Session, op: string, p: unknown) {
       await audit(s, "message.delete", id);
       return {};
     }
+    case "invite.create": {
+      const { email } = z.object({ email: z.email().max(200) }).parse(p);
+      const { token, expiresAt } = await createInvitation(email, s.user.id);
+      await audit(s, "invite.create", email.toLowerCase());
+      // The link is shown once to Ewan and never stored: only its hash is kept.
+      return { link: `${origin}/join?token=${token}`, expiresAt };
+    }
+    case "invite.revoke": {
+      const { id } = z.object({ id: z.uuid() }).parse(p);
+      await revokeInvitation(id);
+      await audit(s, "invite.revoke", id);
+      return {};
+    }
     case "settings.save": {
       const st = settingsSchema.parse(p);
       await saveAppSettings(st);
@@ -145,7 +161,7 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as { op?: string; payload?: unknown } | null;
   if (!body?.op) return fail("invalid", 400);
   try {
-    return ok(await handle(s, body.op, body.payload ?? {}));
+    return ok(await handle(s, body.op, body.payload ?? {}, new URL(req.url).origin));
   } catch (e) {
     if (e instanceof HttpError) return fail(e.code, e.status);
     if (e instanceof ZodError) return fail("invalid", 400);

@@ -35,12 +35,26 @@ export function serviceClient(): SupabaseClient {
 export interface Session {
   user: User;
   db: SupabaseClient;
+  /** Full admin rights: listed in ADMIN_EMAILS **and** granted the role in the database. */
   isAdmin: boolean;
+  /** Listed in ADMIN_EMAILS but the role is not granted yet (may only see the setup checklist). */
+  isAdminCandidate: boolean;
+}
+
+/**
+ * Admin rights need two independent things:
+ *  1. the email is in the ADMIN_EMAILS server variable, and
+ *  2. the account's app_metadata.role is "admin". app_metadata can only be written with the service
+ *     role or SQL (never by the user or the browser), so registering Ewan's address somewhere else
+ *     can never grant admin rights.
+ */
+export function hasAdminRole(user: User): boolean {
+  return isAdminEmail(user.email) && (user.app_metadata as { role?: string } | undefined)?.role === "admin";
 }
 
 export async function getSession(): Promise<Session | null> {
   const db = await userClient();
   const { data, error } = await db.auth.getUser();
   if (error || !data.user) return null;
-  return { user: data.user, db, isAdmin: isAdminEmail(data.user.email) };
+  return { user: data.user, db, isAdmin: hasAdminRole(data.user), isAdminCandidate: isAdminEmail(data.user.email) };
 }

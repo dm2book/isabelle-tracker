@@ -12,7 +12,7 @@ import { uuid } from "@/lib/rooms/layout";
 import { zonedToUtc } from "@/lib/time";
 import type { GiftAnimation, GiftKind, GiftSummary } from "@/lib/types";
 
-type Tab = "overview" | "rewards" | "gift" | "gifts" | "messages" | "settings" | "audit";
+type Tab = "overview" | "rewards" | "gift" | "gifts" | "messages" | "invites" | "settings" | "audit";
 
 interface Overview {
   recipients: { id: string; email: string; displayName: string }[];
@@ -23,6 +23,75 @@ interface Overview {
   audit: { admin_email: string; action: string; target: string | null; created_at: string }[];
   stats: { heartsThisWeek: number };
   encryptionReady: boolean;
+  invitations: { id: string; email: string; expires_at: string; used_at: string | null; revoked_at: string | null; created_at: string }[];
+  invitableEmails: string[];
+}
+
+function InvitesPanel({ data, onChange }: { data: Overview; onChange: () => void }) {
+  const { t } = useT();
+  const toast = useWorld((s) => s.toast);
+  const [email, setEmail] = useState(data.invitableEmails[0] ?? "");
+  const [link, setLink] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const create = async () => {
+    setBusy(true);
+    try {
+      const r = await apiPost<{ link: string }>("/api/admin", { op: "invite.create", payload: { email } });
+      setLink(r.link);
+      onChange();
+    } catch {
+      toast({ text: "common.error", tone: "error" });
+    } finally {
+      setBusy(false);
+    }
+  };
+  const share = async () => {
+    if (!link) return;
+    if (navigator.share) await navigator.share({ title: t("app.short"), text: "💌", url: link }).catch(() => {});
+    else {
+      await navigator.clipboard.writeText(link).catch(() => {});
+      toast({ text: t("invites.copied"), tone: "success" });
+    }
+  };
+  const status = (i: Overview["invitations"][number]) =>
+    i.used_at ? t("invites.used") : i.revoked_at ? t("invites.revoked") : new Date(i.expires_at) < new Date() ? t("invites.expired") : t("invites.active");
+  if (!data.invitableEmails.length) return <p className="text-sm text-muted">{t("invites.none")}</p>;
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted">{t("invites.hint")}</p>
+      <div className="flex flex-wrap gap-2">
+        <select className="field max-w-xs" value={email} onChange={(e) => setEmail(e.target.value)} aria-label={t("invites.email")}>
+          {data.invitableEmails.map((e) => <option key={e} value={e}>{e}</option>)}
+        </select>
+        <button className="btn btn-primary" disabled={busy || !email} onClick={create}>💌 {t("invites.create")}</button>
+      </div>
+      {link && (
+        <div className="card-flat space-y-2 p-3">
+          <p className="text-sm font-bold">{t("invites.link")}</p>
+          <p className="font-mono text-xs break-all select-all">{link}</p>
+          <div className="flex gap-2">
+            <button className="btn btn-primary btn-sm" onClick={share}>📤 {t("invites.share")}</button>
+            <button className="btn btn-ghost btn-sm" onClick={async () => { await navigator.clipboard.writeText(link).catch(() => {}); toast({ text: t("invites.copied"), tone: "success" }); }}>{t("invites.copy")}</button>
+          </div>
+        </div>
+      )}
+      <div>
+        <p className="title mb-2 text-sm">{t("invites.list")}</p>
+        <ul className="space-y-2">
+          {data.invitations.map((i) => (
+            <li key={i.id} className="card-flat flex flex-wrap items-center gap-2 p-2.5 text-sm">
+              <span className="min-w-0 flex-1 truncate font-bold">{i.email}</span>
+              <span className="text-xs text-muted">{fmt(i.created_at)}</span>
+              <span className="chip">{status(i)}</span>
+              {!i.used_at && !i.revoked_at && new Date(i.expires_at) > new Date() && (
+                <button className="btn btn-ghost btn-sm" onClick={async () => { await apiPost("/api/admin", { op: "invite.revoke", payload: { id: i.id } }); onChange(); }}>{t("invites.revoke")}</button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
 }
 
 const ANIMS: GiftAnimation[] = ["present", "hug", "hearts", "confetti", "rare"];
@@ -195,17 +264,25 @@ export default function AdminPage() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-6 pb-16">
       <div className="mb-2"><Link href="/home" className="btn btn-ghost btn-sm">← {t("nav.home")}</Link></div>
-      <PageHeader title={t("admin.title")} subtitle={t("admin.subtitle")} emoji="🛡️" action={mode === "cloud" && isAdmin ? <button className="btn btn-ghost btn-icon" onClick={load} aria-label="Refresh"><RefreshCw size={18} /></button> : null} />
+      <PageHeader title={t("admin.title")} subtitle={t("admin.subtitle")} emoji="🛡️" action={
+          <div className="flex gap-1">
+            <Link href="/setup" className="btn btn-ghost btn-sm">🧰 {t("admin.tabs.setup")}</Link>
+            {mode === "cloud" && isAdmin ? <button className="btn btn-ghost btn-icon" onClick={load} aria-label="Refresh"><RefreshCw size={18} /></button> : null}
+          </div>
+        } />
       {mode === "local" ? (
         <LocalAdmin />
       ) : !isAdmin ? (
-        <div className="card p-6"><p className="relative z-[1] font-bold">{t("admin.forbidden")}</p></div>
+        <div className="card p-6">
+          <p className="relative z-[1] font-bold">{t("admin.forbidden")}</p>
+          <Link href="/setup" className="btn btn-soft btn-sm relative z-[1] mt-3">🧰 {t("admin.tabs.setup")}</Link>
+        </div>
       ) : !data ? (
         <div className="skeleton h-40" />
       ) : (
         <>
           <div className="no-scrollbar -mx-4 mb-4 flex gap-2 overflow-x-auto px-4" role="tablist">
-            {(["overview", "rewards", "gift", "gifts", "messages", "settings", "audit"] as Tab[]).map((x) => (
+            {(["overview", "invites", "rewards", "gift", "gifts", "messages", "settings", "audit"] as Tab[]).map((x) => (
               <button key={x} role="tab" aria-selected={tab === x} className={`btn btn-sm shrink-0 ${tab === x ? "btn-primary" : "btn-ghost"}`} onClick={() => { setTab(x); if (x !== "gift") setPreset(null); }}>{t(`admin.tabs.${x}`)}</button>
             ))}
           </div>
@@ -223,6 +300,8 @@ export default function AdminPage() {
               <div className="card p-4 sm:col-span-4"><p className="relative z-[1] text-sm">🔒 {t("admin.neverStored")} · {t("admin.robuxProgram")} : <b>{data.settings.robuxEnabled ? t("common.on") : t("common.off")}</b></p></div>
             </div>
           )}
+
+          {tab === "invites" && <Section title={t("invites.title")}><InvitesPanel data={data} onChange={load} /></Section>}
 
           {tab === "rewards" && (
             <Section title={t("admin.events")}>

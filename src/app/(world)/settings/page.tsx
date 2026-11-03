@@ -12,6 +12,7 @@ import { apiGet, apiPost, rpc } from "@/lib/client/api";
 import { disablePush, enablePush, pushState, type PushState } from "@/lib/client/push";
 import { THEME_CACHE_KEY } from "@/lib/theme/apply";
 import type { ColorMode, NotificationKind, ReminderSlot } from "@/lib/types";
+import { ImportPanel } from "@/components/shell/ImportPanel";
 
 const TIMEZONES = ["Europe/Paris", "Europe/London", "Europe/Brussels", "Europe/Zurich", "America/Montreal", "America/New_York", "America/Los_Angeles", "Asia/Tokyo", "Australia/Sydney", "Indian/Reunion", "Pacific/Tahiti", "America/Martinique"];
 const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));
@@ -235,6 +236,12 @@ export default function SettingsPage() {
           </div>
         </div>
       </Section>
+
+      {mode === "cloud" && (
+        <Section title={`💗 ${t("migrate.section")}`}>
+          <ImportPanel />
+        </Section>
+      )}
 
       <Section title={`👤 ${t("settings.account")}`}>
         {mode === "cloud" ? (

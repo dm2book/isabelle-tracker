@@ -20,17 +20,27 @@ French is the default language; English is available in Settings.
 
 The app switches to cloud mode automatically when the Supabase variables **and** `APP_SECRET` are set.
 
-## Setup for cloud mode (about 15 minutes)
+## Setup for cloud mode
 
-1. **Create a Supabase project** at <https://supabase.com> in an **EU region** (Paris `eu-west-3` or Frankfurt) for GDPR.
-2. **Run the schema**: Supabase → SQL Editor → paste `supabase/migrations/0001_init.sql` → Run.
-3. **Lock down sign-ups**: Authentication → Sign In / Providers → Email → turn **off** “Allow new users to sign up”. Accounts are created only through `/api/auth/signup`, which checks `ALLOWED_EMAILS`.
-4. **Auth URLs**: Authentication → URL Configuration → Site URL = your Vercel URL; add `https://YOUR-APP.vercel.app/auth/callback` to Redirect URLs (password resets).
-5. **Vercel environment variables** (Project → Settings → Environment Variables), see `.env.example`:
-   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API)
-   - `ADMIN_EMAILS` = Ewan’s email, `ALLOWED_EMAILS` = Isabelle’s email
-   - `APP_SECRET`, `REWARD_ENCRYPTION_KEY`, `CRON_SECRET`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
-6. **Redeploy.** Isabelle opens the site → “Première visite ? Crée ton compte” with her invited email. Ewan does the same with his, then opens **/admin**.
+Full phone-friendly walkthrough: see the steps Claude gave in the chat, summarised here.
+
+1. **Supabase project** in an **EU region** (West EU – Paris, or Central EU – Frankfurt).
+2. **SQL Editor** → run `supabase/migrations/0001_init.sql`, then `0002_explicit_grants.sql`, then `0003_invitations_imports.sql` (each is safe to re-run).
+3. **Authentication → Sign In / Providers** → turn **off** "Allow new users to sign up".
+4. **Authentication → URL Configuration** → Site URL = your production URL; add `<site>/auth/callback` to Redirect URLs.
+5. **Authentication → Users → Add user** → create **Ewan's** account (email + password, auto-confirm). Admin accounts are never created from the app.
+6. **SQL Editor** → grant Ewan the admin role (the `/setup` page shows the exact line to copy):
+   `update auth.users set raw_app_meta_data = coalesce(raw_app_meta_data,'{}'::jsonb) || '{"role":"admin"}'::jsonb where lower(email) = 'ewan@…';`
+7. **Vercel → Settings → Environment Variables** (see `.env.example`), first for **Preview only**.
+8. Open the Preview deployment's **`/setup`** page: every item must be ✅ and the live tests must pass.
+9. **/admin → Invitations** → create Isabelle's single-use link (7 days) and send it to her. She opens it, picks a password, and is offered to **import her world** from that device.
+10. Only after the Preview checks pass, add the same variables to **Production**.
+
+Security model for accounts: no public sign-up; Isabelle joins only through a hashed, single-use, expiring invitation for an address in `ALLOWED_EMAILS`; admin rights need **both** an address in `ADMIN_EMAILS` **and** the `admin` role in the account's server-only `app_metadata`.
+
+**Importing her device world.** After signing in on the device she has been using, Isabelle sees "On a trouvé ton monde sur cet appareil". The import is validated on the server, capped at what is realistically earnable since launch, merged without duplicates (safe to retry), and never deletes the copy on her device. Coins are carried over only by the first import. A backup file (Settings → Export) can also be imported.
+
+**Email.** Supabase's built-in email only reaches members of your Supabase organisation, so password-reset emails won't reach Isabelle unless you configure custom SMTP. Otherwise reset her password from Authentication → Users.
 
 **Hourly reminders.** Vercel Hobby allows one cron per day (`vercel.json`, 08:00 UTC). For morning/afternoon/evening reminders, add repository secrets `APP_URL` and `CRON_SECRET` to enable `.github/workflows/reminders.yml`, or switch to Vercel Pro and make the cron hourly.
 
@@ -59,7 +69,7 @@ Owner-only RLS on every personal table; server-only tables for codes, settings a
 ```bash
 npm install
 npm run dev        # http://localhost:3000 — device mode unless .env.local has Supabase variables
-npm test           # game engine, odds, crypto, FR/EN parity, theme contrast
+npm test           # game engine, odds, crypto, import caps, database RLS (PGlite), FR/EN parity, contrast
 npm run typecheck
 npm run lint
 npm run build

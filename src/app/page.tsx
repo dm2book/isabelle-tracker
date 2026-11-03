@@ -14,6 +14,8 @@ import { BUILT_IN_THEMES } from "@/lib/theme/themes";
 import { BOW_COLORS } from "@/lib/catalog/wardrobe";
 import { LANGS } from "@/lib/i18n";
 import { play } from "@/lib/sound";
+import { ImportPanel } from "@/components/shell/ImportPanel";
+import { hasMeaningfulWorld, readDeviceWorld } from "@/lib/client/importer";
 
 function FloatingDecor() {
   const items = useMemo(() => Array.from({ length: 14 }, (_, i) => ({ x: (i * 41) % 96, d: (i * 1.7) % 9, s: 14 + ((i * 7) % 18), g: ["💗", "✨", "🎀", "⭐", "💕", "🌸"][i % 6], dur: 9 + (i % 5) * 2 })), []);
@@ -129,6 +131,12 @@ export default function Welcome() {
   const { t } = useT();
   const [period, setPeriod] = useState<ReturnType<typeof dayPeriod>>("afternoon");
   const [waveKey, setWaveKey] = useState(0);
+  // A new online account on a device that already holds her world: offer the import before onboarding.
+  const [deviceWorld, setDeviceWorld] = useState(false);
+  const [freshStart, setFreshStart] = useState(false);
+  useEffect(() => {
+    if (mode === "cloud") setDeviceWorld(hasMeaningfulWorld(readDeviceWorld()));
+  }, [mode]);
 
   useEffect(() => setPeriod(dayPeriod(new Date(), tz)), [tz]);
   useEffect(() => {
@@ -137,11 +145,24 @@ export default function Welcome() {
 
   if (status === "boot" || status === "auth") return <BootScreen />;
   if (status === "error") return <BootScreen error />;
+  const offerImport = mode === "cloud" && !profile.onboarded && !freshStart && deviceWorld;
 
   return (
     <Sky period={period} className="relative flex min-h-dvh flex-col items-center justify-center px-5 py-10">
       <FloatingDecor />
-      {!profile.onboarded ? (
+      {offerImport ? (
+        <div className="relative z-[1] flex w-full max-w-md flex-col items-center gap-4">
+          <Companion look={look} anim="hug" animKey={1} size={140} />
+          <div className="card w-full p-6">
+            <div className="relative z-[1] space-y-3">
+              <h1 className="title text-2xl">{t("migrate.title")}</h1>
+              <p>{t("migrate.body")}</p>
+              <ImportPanel showFile={false} onDone={() => router.push("/home")} />
+              <button className="text-sm font-bold text-muted underline" onClick={() => setFreshStart(true)}>{t("migrate.later")}</button>
+            </div>
+          </div>
+        </div>
+      ) : !profile.onboarded ? (
         <div className="relative z-[1] flex w-full flex-col items-center gap-4">
           <Companion look={look} anim="wave" animKey={1} size={140} />
           <h1 className="logo-type text-center text-3xl">{t("app.name")}</h1>

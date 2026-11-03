@@ -74,7 +74,9 @@ export async function GET(req: Request) {
 
   if (firstVisit) {
     const { count } = await s.db.from("rooms").select("id", { count: "exact", head: true });
-    if (!count) await s.db.from("rooms").insert(starterRooms(prefs.lang).map((r) => roomToRow(r, s.user.id)));
+    // `starter: true` marks untouched template rooms; editing a room drops it (schemas strip unknown keys),
+    // so an import can safely replace rooms she never touched.
+    if (!count) await s.db.from("rooms").insert(starterRooms(prefs.lang).map((r) => roomToRow({ ...r, starter: true } as typeof r, s.user.id)));
   }
 
   const since = addDays(dateKey(new Date(), prefs.timezone), -400);

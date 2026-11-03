@@ -18,7 +18,7 @@ function LoginInner() {
   const look = useWorld((s) => s.prefs.companion);
   const lang = useWorld((s) => s.prefs.lang);
   const updatePrefs = useWorld((s) => s.updatePrefs);
-  const [view, setView] = useState<"signin" | "signup" | "forgot" | "newpass">(params.get("reset") ? "newpass" : "signin");
+  const [view, setView] = useState<"signin" | "forgot" | "newpass">(params.get("reset") ? "newpass" : "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
@@ -40,10 +40,6 @@ function LoginInner() {
     try {
       if (view === "signin") {
         await apiPost("/api/auth/signin", { email, password });
-        window.location.href = "/";
-      } else if (view === "signup") {
-        if (password.length < 8) throw new ApiError("weak", "weak", 400);
-        await apiPost("/api/auth/signup", { email, password });
         window.location.href = "/";
       } else if (view === "forgot") {
         await apiPost("/api/auth/reset", { email });
@@ -95,11 +91,10 @@ function LoginInner() {
                 )}
                 {msg && <p className="rounded-xl bg-surface2 p-2 text-center text-sm font-bold" role="alert">{msg}</p>}
                 <button className="btn btn-primary w-full" disabled={busy} type="submit">
-                  {view === "signin" ? t("auth.signIn") : view === "signup" ? t("auth.signUp") : view === "forgot" ? t("common.confirm") : t("auth.setPassword")}
+                  {view === "signin" ? t("auth.signIn") : view === "forgot" ? t("common.confirm") : t("auth.setPassword")}
                 </button>
                 <div className="flex flex-col items-center gap-1 pt-1 text-sm font-bold">
-                  {view === "signin" && <button type="button" className="text-muted underline" onClick={() => setView("signup")}>{t("auth.switchToSignUp")}</button>}
-                  {view === "signup" && <button type="button" className="text-muted underline" onClick={() => setView("signin")}>{t("auth.switchToSignIn")}</button>}
+                  {view === "signin" && <p className="text-center font-normal text-muted">💌 {t("auth.inviteOnly")}</p>}
                   {view === "signin" && <button type="button" className="text-muted underline" onClick={() => setView("forgot")}>{t("auth.forgot")}</button>}
                   {view === "forgot" && <button type="button" className="text-muted underline" onClick={() => setView("signin")}>{t("common.back")}</button>}
                 </div>

@@ -141,17 +141,33 @@ function debounceCloud(key: string, fn: () => void, ms = 900) {
 }
 
 export const useWorld = create<WorldState>()((set, get) => {
+  const writeLocal = () => {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = null;
+    try {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(snapshotOf(get())));
+    } catch {
+      /* storage full or unavailable */
+    }
+  };
+
   const persistLocal = () => {
     if (get().mode !== "local") return;
     if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      try {
-        localStorage.setItem(LOCAL_KEY, JSON.stringify(snapshotOf(get())));
-      } catch {
-        /* storage full or unavailable */
-      }
-    }, 300);
+    saveTimer = setTimeout(writeLocal, 300);
   };
+
+  // Never lose the last change: write any pending save at once when the page is hidden or closed
+  // (switching apps, locking the phone, reloading, closing the tab).
+  if (typeof window !== "undefined") {
+    const flush = () => {
+      if (saveTimer && get().mode === "local") writeLocal();
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") flush();
+    });
+  }
 
   const fail = (err: unknown) => {
     const code = err instanceof ApiError ? err.code : err instanceof GameError ? err.code : "error";

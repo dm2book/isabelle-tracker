@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import type { Session } from "./supabase";
-import { serviceClient } from "./supabase";
+import { hasAdminRole, serviceClient } from "./supabase";
 import { env } from "./env";
 import { HttpError } from "./http";
 import { runEvents, runGame, type RunCtx, type RunResult } from "./game";
@@ -39,7 +39,7 @@ const idOnly = z.object({ id: z.string().max(60) });
 async function adminUserIds(): Promise<string[]> {
   if (!env.adminEmails.length) return [];
   const { data } = await serviceClient().auth.admin.listUsers({ page: 1, perPage: 200 });
-  return (data?.users ?? []).filter((u) => u.email && env.adminEmails.includes(u.email.toLowerCase())).map((u) => u.id);
+  return (data?.users ?? []).filter((u) => hasAdminRole(u)).map((u) => u.id);
 }
 
 async function robuxStatusFor(userId: string) {

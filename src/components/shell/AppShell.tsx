@@ -15,6 +15,7 @@ import { SeasonalEffects } from "@/components/effects/SeasonalEffects";
 import { GiftWatcher } from "./GiftWatcher";
 import { Reminders } from "./Reminders";
 import { BootScreen } from "./BootScreen";
+import { ImportBanner } from "./ImportPanel";
 import { levelProgress } from "@/lib/game/rules";
 
 function NavIcon({ item, active, size = 22 }: { item: NavItem; active?: boolean; size?: number }) {
@@ -193,7 +194,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Sidebar />
       <div className="relative z-[1] lg:pl-64">
         <TopBar />
-        <main id="main" className="pb-nav mx-auto w-full max-w-5xl px-4 pt-2 lg:px-8">{children}</main>
+        <main id="main" className="pb-nav mx-auto w-full max-w-5xl px-4 pt-2 lg:px-8"><ImportBanner />{children}</main>
       </div>
       <BottomNav />
       <MoreSheet />
