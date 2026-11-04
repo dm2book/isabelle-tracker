@@ -2,11 +2,9 @@ import { z, ZodError } from "zod";
 import { cloudEnabled, env } from "@/lib/server/env";
 import { getSession, serviceClient, type Session } from "@/lib/server/supabase";
 import { fail, HttpError, ok, sameOrigin } from "@/lib/server/http";
-import { encryptCode } from "@/lib/server/crypto";
 import { getAppSettings, saveAppSettings } from "@/lib/server/settings";
-import { sendPush } from "@/lib/server/push";
-import { translate } from "@/lib/i18n";
 import { createInvitation, listInvitations, revokeInvitation } from "@/lib/server/invitations";
+import { deliverGift } from "@/lib/server/gifts";
 
 export const dynamic = "force-dynamic";
 
@@ -77,35 +75,9 @@ async function handle(s: Session, op: string, p: unknown, origin: string) {
       const g = giftSchema.parse(p);
       const people = await recipients();
       if (!people.some((r) => r.id === g.recipientId)) throw new HttpError("invalid_recipient", 400);
-      const dup = await db.from("gift_deliveries").select("id").eq("idempotency_key", g.idempotencyKey).maybeSingle();
-      if (dup.data) throw new HttpError("duplicate", 409);
-      let codeId: string | null = null;
-      if (g.kind === "robux") {
-        if (!g.code || g.code.length < 4) throw new HttpError("code_required", 400);
-        const enc = encryptCode(g.code);
-        const ins = await db.from("reward_codes").insert({ ...enc, platform: "roblox", created_by: s.user.id }).select("id").single();
-        if (ins.error) throw new HttpError("db_error", 500);
-        codeId = ins.data.id;
-      }
-      const gift = await db
-        .from("gift_deliveries")
-        .insert({
-          sender_id: s.user.id, recipient_id: g.recipientId, reward_event_id: g.rewardEventId ?? null, reward_code_id: codeId,
-          kind: g.kind, title: g.title, message: g.message, animation: g.animation, idempotency_key: g.idempotencyKey,
-        })
-        .select("id")
-        .single();
-      if (gift.error) {
-        if (codeId) await db.from("reward_codes").delete().eq("id", codeId);
-        throw new HttpError(gift.error.code === "23505" ? "duplicate" : "db_error", gift.error.code === "23505" ? 409 : 500);
-      }
-      if (g.rewardEventId) await db.from("reward_events").update({ status: "fulfilled" }).eq("id", g.rewardEventId).eq("user_id", g.recipientId);
-      const { data: prefs } = await db.from("preferences").select("data").eq("user_id", g.recipientId).maybeSingle();
-      const lang = ((prefs?.data as { lang?: "fr" | "en" })?.lang ?? "fr") as "fr" | "en";
-      await db.from("notifications").insert({ user_id: g.recipientId, kind: "gift", title: translate(lang, "notifications.giftTitle"), body: translate(lang, "notifications.giftBody"), link: "/surprises" });
-      await sendPush(g.recipientId, { title: translate(lang, "notifications.giftTitle"), body: translate(lang, "notifications.giftBody"), url: "/home", tag: "gift" });
-      await audit(s, `gift.send:${g.kind}`, gift.data.id);
-      return { id: gift.data.id };
+      const gift = await deliverGift(s.user.id, g);
+      await audit(s, `gift.send:${g.kind}`, gift.id);
+      return { id: gift.id };
     }
     case "reward.dismiss": {
       const { id } = z.object({ id: z.uuid() }).parse(p);

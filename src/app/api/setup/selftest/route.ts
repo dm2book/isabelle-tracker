@@ -6,8 +6,10 @@ import { getSession, serviceClient } from "@/lib/server/supabase";
 import { fail, ok, sameOrigin } from "@/lib/server/http";
 import { decryptCode, encryptCode, signHeart, verifyHeart } from "@/lib/server/crypto";
 import { getAppSettings, saveAppSettings } from "@/lib/server/settings";
+import { runEndToEnd } from "@/lib/server/e2eTest";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 type Result = { id: string; ok: boolean; detail?: string };
 
@@ -30,6 +32,17 @@ export async function POST(req: Request) {
   const s = await getSession();
   if (!s) return fail("unauthorized", 401);
   if (!s.isAdmin) return fail("forbidden", 403);
+  const body = (await req.json().catch(() => null)) as { mode?: string } | null;
+
+  // Full end-to-end run: temporary test accounts, invitation, sign-in, RLS, import and a gift, then clean-up.
+  if (body?.mode === "full") {
+    try {
+      return ok({ results: await runEndToEnd(s) });
+    } catch (e) {
+      console.error("e2e selftest", e instanceof Error ? e.message : "unknown");
+      return fail("error", 500);
+    }
+  }
 
   const results: Result[] = [];
 

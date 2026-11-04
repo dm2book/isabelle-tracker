@@ -85,6 +85,7 @@ export default function SetupPage() {
   const toast = useWorld((s) => s.toast);
   const [data, setData] = useState<Status | null>(null);
   const [tests, setTests] = useState<Check[] | null>(null);
+  const [full, setFull] = useState<Check[] | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -98,11 +99,11 @@ export default function SetupPage() {
     load();
   }, [load]);
 
-  const runTests = async () => {
+  const runTests = async (mode: "quick" | "full" = "quick") => {
     setBusy(true);
     try {
-      const r = await apiPost<{ results: Check[] }>("/api/setup/selftest", {});
-      setTests(r.results);
+      const r = await apiPost<{ results: Check[] }>("/api/setup/selftest", { mode });
+      (mode === "full" ? setFull : setTests)(r.results);
     } catch {
       toast({ text: "common.error", tone: "error" });
     } finally {
@@ -166,8 +167,19 @@ export default function SetupPage() {
           )}
 
           {data.viewer === "admin" && (
-            <Section title={`🧪 ${t("setup.tests")}`} action={<button className="btn btn-primary btn-sm" disabled={busy} onClick={runTests}>{t("setup.runTests")}</button>}>
+            <Section title={`🧪 ${t("setup.tests")}`} action={<button className="btn btn-primary btn-sm" disabled={busy} onClick={() => runTests("quick")}>{t("setup.runTests")}</button>}>
               {tests ? <ul className="divide-y-2 divide-dashed divide-line">{tests.map((c) => <Row key={c.id} c={c} label={td(`setup.checks.${c.id}`)} />)}</ul> : <p className="text-sm text-muted">—</p>}
+              <div className="mt-4 space-y-2 rounded-2xl bg-surface2 p-3">
+                <p className="text-sm font-bold">{t("setup.fullTitle")}</p>
+                <p className="text-sm">{t("setup.fullIntro")}</p>
+                <button className="btn btn-primary btn-sm" disabled={busy} onClick={() => runTests("full")}>{busy ? t("setup.fullRunning") : t("setup.runFull")}</button>
+                {full && (
+                  <>
+                    <p className="text-sm font-bold">{full.every((c) => c.ok) ? `✅ ${t("setup.fullPassed")}` : `⚠️ ${t("setup.fullFailed")}`}</p>
+                    <ul className="divide-y-2 divide-dashed divide-line">{full.map((c) => <Row key={c.id} c={c} label={td(`setup.checks.${c.id}`)} />)}</ul>
+                  </>
+                )}
+              </div>
               <div className="mt-3"><Link href="/admin" className="btn btn-soft btn-sm">🛡️ {t("setup.openAdmin")}</Link></div>
             </Section>
           )}

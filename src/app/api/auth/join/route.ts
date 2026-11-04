@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { cloudEnabled } from "@/lib/server/env";
-import { serviceClient, userClient } from "@/lib/server/supabase";
-import { fail, ok, sameOrigin } from "@/lib/server/http";
-import { claimInvitation, findInvitation, markInvitationUser, maskEmail, releaseInvitation } from "@/lib/server/invitations";
+import { userClient } from "@/lib/server/supabase";
+import { fail, HttpError, ok, sameOrigin } from "@/lib/server/http";
+import { acceptInvitation, findInvitation, maskEmail } from "@/lib/server/invitations";
 
 export const dynamic = "force-dynamic";
 
@@ -34,18 +34,16 @@ export async function POST(req: Request) {
   const parsed = z.object({ token: z.string().max(80), password: z.string().min(8).max(200) }).safeParse(await req.json().catch(() => null));
   if (!parsed.success) return fail("weak", 400);
 
-  const inv = await findInvitation(parsed.data.token);
-  if (!inv) return fail("invalid_invitation", 404);
-  if (!(await claimInvitation(inv.id))) return fail("invalid_invitation", 404);
-
-  const { data, error } = await serviceClient().auth.admin.createUser({ email: inv.email, password: parsed.data.password, email_confirm: true });
-  if (error || !data.user) {
-    await releaseInvitation(inv.id);
-    return fail(/already/i.test(error?.message ?? "") ? "exists" : "error", 409);
+  let email: string;
+  try {
+    ({ email } = await acceptInvitation(parsed.data.token, parsed.data.password));
+  } catch (e) {
+    const code = e instanceof HttpError ? e.code : "error";
+    if (e instanceof HttpError && e.detail) console.warn("join: account not created", code, e.detail);
+    return fail(code, code === "invalid_invitation" ? 404 : code === "weak" ? 400 : 409);
   }
-  await markInvitationUser(inv.id, data.user.id);
   const db = await userClient();
-  const signIn = await db.auth.signInWithPassword({ email: inv.email, password: parsed.data.password });
+  const signIn = await db.auth.signInWithPassword({ email, password: parsed.data.password });
   if (signIn.error) return fail("error", 400);
   return ok({});
 }

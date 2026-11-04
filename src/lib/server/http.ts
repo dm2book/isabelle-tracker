@@ -12,7 +12,8 @@ export function fail(code: string, status = 400, message?: string) {
 }
 
 export class HttpError extends Error {
-  constructor(public code: string, public status = 400) {
+  /** `detail` is for server-side diagnostics only (logs, admin self-test); `fail()` never sends it. */
+  constructor(public code: string, public status = 400, public detail?: string) {
     super(code);
   }
 }
