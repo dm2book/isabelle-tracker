@@ -229,7 +229,7 @@ function GiftForm({ data, preset, onSent }: { data: Overview; preset: { rewardEv
             <button type="button" className="btn btn-ghost btn-icon" onClick={() => setShowCode((v) => !v)} aria-label={showCode ? "Hide" : "Show"}>{showCode ? <EyeOff size={18} /> : <Eye size={18} />}</button>
           </div>
           <span className="mt-1 block text-xs text-muted">🔒 {t("admin.codeHint")}</span>
-          {!data.encryptionReady && <span className="mt-1 block text-xs font-bold text-[#a3123c]">REWARD_ENCRYPTION_KEY missing on the server.</span>}
+          {!data.encryptionReady && <span className="mt-1 block text-xs font-bold text-[#a3123c] dark:text-[#FF9DB5]">REWARD_ENCRYPTION_KEY missing on the server.</span>}
         </label>
       )}
       <label className="block"><span className="label">{t("admin.titleField")}</span><input className="field" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} /></label>

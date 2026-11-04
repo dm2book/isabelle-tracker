@@ -20,7 +20,6 @@ export default function CompanionPage() {
   const { t, td, lang } = useT();
   const look = useWorld((s) => s.prefs.companion);
   const owned = useWorld((s) => s.game.owned);
-  const coins = useWorld((s) => s.game.coins);
   const tz = useWorld((s) => s.prefs.timezone);
   const updatePrefs = useWorld((s) => s.updatePrefs);
   const gameAction = useWorld((s) => s.gameAction);
@@ -58,11 +57,14 @@ export default function CompanionPage() {
             <button
               key={w.id}
               onClick={() => wear(w)}
-              disabled={!unlocked && coins < w.price}
               aria-pressed={active}
-              className={`card-flat relative flex flex-col items-center gap-1 border-[3px] p-2 text-center text-[0.72rem] font-bold ${active ? "border-primary" : "border-transparent"} ${!unlocked ? "opacity-70" : ""}`}
+              className={`card-flat relative flex flex-col items-center gap-1 border-[3px] p-2 text-center text-[0.72rem] font-bold ${active ? "border-primary" : "border-transparent"}`}
             >
-              <Companion look={{ ...look, outfit: kind === "outfit" ? w.id : look.outfit, accessory: kind === "accessory" ? w.id : look.accessory, outfitColor: kind === "outfit" ? w.color : look.outfitColor }} size={64} still />
+              {/* Locked items stay readable (name and price); only the preview is dimmed. Tapping one
+                  without enough coins explains it instead of doing nothing. */}
+              <span className={!unlocked ? "opacity-70" : ""}>
+                <Companion look={{ ...look, outfit: kind === "outfit" ? w.id : look.outfit, accessory: kind === "accessory" ? w.id : look.accessory, outfitColor: kind === "outfit" ? w.color : look.outfitColor }} size={64} still />
+              </span>
               <span className="line-clamp-2">{w.name[lang]}</span>
               {!unlocked && <span className="absolute top-1 left-1 flex items-center gap-0.5 rounded-full bg-surface px-1.5 text-[0.62rem]"><Lock size={9} /> {w.price}</span>}
               {w.season && <span className="absolute top-1 right-1 text-xs" aria-hidden>{w.season === season?.id ? "✨" : ""}</span>}

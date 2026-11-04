@@ -106,7 +106,7 @@ export default function InventoryPage() {
                         <span className={`text-3xl ${n ? "" : "blur-[3px] grayscale"}`} aria-hidden>{c.emoji}</span>
                         <span className="text-[0.7rem] font-bold">{n ? c.name[lang] : "???"}</span>
                         {n > 1 && <span className="absolute top-1 right-1 rounded-full bg-primary px-1.5 text-[0.65rem] font-bold text-on-primary">×{n}</span>}
-                        <span className={`mt-0.5 text-[0.6rem] font-bold uppercase ${c.rarity === "legendary" ? "text-[#C58A00]" : c.rarity === "epic" ? "text-[#8A5CE6]" : "text-muted"}`}>{c.rarity}</span>
+                        <span className={`mt-0.5 text-[0.6rem] font-bold uppercase ${c.rarity === "legendary" ? "text-[#9A6A00] dark:text-[#FFD45E]" : c.rarity === "epic" ? "text-[#7A48D6] dark:text-[#C9B6FF]" : "text-muted"}`}>{c.rarity}</span>
                       </div>
                     );
                   })}

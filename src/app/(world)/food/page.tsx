@@ -289,7 +289,7 @@ export default function FoodPage() {
           <div className="grid grid-cols-7 gap-1 text-center text-xs">
             {grid.map((d, i) =>
               d ? (
-                <button key={d} disabled={d > today} onClick={() => setDay(d)} className={`aspect-square rounded-lg font-bold ${d === day ? "bg-primary text-on-primary" : byDay.has(d) ? "bg-accent/40" : "bg-surface2"} ${d > today ? "opacity-45" : ""}`} aria-label={formatDay(d, lang)}>
+                <button key={d} disabled={d > today} onClick={() => setDay(d)} className={`aspect-square rounded-lg font-bold ${d === day ? "bg-primary text-on-primary" : byDay.has(d) ? "bg-accent/40" : "bg-surface2"} ${d > today ? "opacity-60" : ""}`} aria-label={formatDay(d, lang)}>
                   {Number(d.slice(8))}
                 </button>
               ) : (

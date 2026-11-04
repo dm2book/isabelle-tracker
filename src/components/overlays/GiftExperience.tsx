@@ -212,7 +212,7 @@ export function GiftExperience() {
                           {demo && <p className="mt-2 text-sm text-muted">{t("gift.demo")}</p>}
                         </div>
                       )}
-                      {err && <p className="mt-2 text-sm font-bold text-[#a3123c]">{err}</p>}
+                      {err && <p className="mt-2 text-sm font-bold text-[#a3123c] dark:text-[#FF9DB5]">{err}</p>}
                     </div>
                   )}
 

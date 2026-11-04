@@ -93,11 +93,11 @@ export function ColorField({ value, onChange, label, swatches }: { value: string
           }}
         />
       </div>
-      {bad && <p className="mt-1 text-sm text-[#a3123c]">{t("studio.invalidHex")}</p>}
+      {bad && <p className="mt-1 text-sm text-[#a3123c] dark:text-[#FF9DB5]">{t("studio.invalidHex")}</p>}
       {swatches && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {swatches.map((c) => (
-            <button key={c} type="button" onClick={() => onChange(c)} aria-label={c} className={`h-7 w-7 rounded-full border-2 ${c.toUpperCase() === value.toUpperCase() ? "border-ink" : "border-line"}`} style={{ background: c }} />
+            <button key={c} type="button" onClick={() => onChange(c)} aria-label={c} className={`h-9 w-9 rounded-full border-2 ${c.toUpperCase() === value.toUpperCase() ? "border-ink ring-2 ring-primary/50" : "border-line"}`} style={{ background: c }} />
           ))}
         </div>
       )}

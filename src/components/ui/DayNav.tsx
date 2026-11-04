@@ -30,7 +30,7 @@ export function DayNav({ day, today, onChange, marks }: { day: string; today: st
               onClick={() => onChange(d)}
               aria-pressed={active}
               aria-label={formatDay(d, lang)}
-              className={`flex flex-col items-center rounded-2xl py-1.5 text-xs font-bold transition-colors ${active ? "bg-primary text-on-primary" : d === today ? "bg-surface2" : ""} ${future ? "opacity-55" : ""}`}
+              className={`flex flex-col items-center rounded-2xl py-1.5 text-xs font-bold transition-colors ${active ? "bg-primary text-on-primary" : d === today ? "bg-surface2" : ""} ${future ? "opacity-60" : ""}`}
             >
               <span className="capitalize">{formatDay(d, lang, { weekday: "short" }).slice(0, 3)}</span>
               <span className="text-base">{Number(d.slice(8))}</span>
