@@ -40,15 +40,23 @@ export const supabasePublicKeySource = first([
 export const SUPABASE_URL = normalizeSupabaseUrl(supabaseUrlSource.value);
 export const SUPABASE_PUBLIC_KEY = supabasePublicKeySource.value;
 
-/** True if a key is a secret/service-role key (it must never be used as the public key). */
-export function looksSecret(key: string) {
-  if (key.startsWith("sb_secret_")) return true;
+function jwtRole(key: string) {
   const parts = key.split(".");
-  if (parts.length !== 3) return false;
+  if (parts.length !== 3) return null;
   try {
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"))) as { role?: string };
-    return payload.role === "service_role";
+    return (JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"))) as { role?: string }).role ?? null;
   } catch {
-    return false;
+    return null;
   }
 }
+
+/** True if a key is a secret/service-role key (it must never be used as the public key). */
+export const looksSecret = (key: string) => key.startsWith("sb_secret_") || jwtRole(key) === "service_role";
+
+/** True if a key is a public (publishable/anon) key (it can't do the server's work). */
+export const looksPublic = (key: string) => key.startsWith("sb_publishable_") || jwtRole(key) === "anon";
+
+export const supabaseSecretKeySource = first([
+  ["SUPABASE_SECRET_KEY", process.env.SUPABASE_SECRET_KEY],
+  ["SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY],
+]);

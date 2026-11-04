@@ -1,5 +1,5 @@
 import "server-only";
-import { looksSecret, SUPABASE_PUBLIC_KEY, SUPABASE_URL } from "../supabaseConfig";
+import { looksSecret, SUPABASE_PUBLIC_KEY, SUPABASE_URL, supabaseSecretKeySource } from "../supabaseConfig";
 
 const list = (v: string | undefined) =>
   (v ?? "")
@@ -11,7 +11,7 @@ export const env = {
   supabaseUrl: SUPABASE_URL,
   // A secret key pasted into the public-key variable is refused: cloud mode stays off and /setup says why.
   supabaseAnonKey: looksSecret(SUPABASE_PUBLIC_KEY) ? "" : SUPABASE_PUBLIC_KEY,
-  serviceRoleKey: (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || "").trim(),
+  serviceRoleKey: supabaseSecretKeySource.value,
   adminEmails: list(process.env.ADMIN_EMAILS),
   allowedEmails: list(process.env.ALLOWED_EMAILS),
   rewardKey: process.env.REWARD_ENCRYPTION_KEY ?? "",

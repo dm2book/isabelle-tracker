@@ -1,7 +1,7 @@
 import { cloudEnabled, env, pushConfigured } from "@/lib/server/env";
 import { getSession, hasAdminRole, serviceClient } from "@/lib/server/supabase";
 import { ok } from "@/lib/server/http";
-import { looksSecret, supabasePublicKeySource, supabaseUrlSource } from "@/lib/supabaseConfig";
+import { looksPublic, looksSecret, supabasePublicKeySource, supabaseSecretKeySource, supabaseUrlSource } from "@/lib/supabaseConfig";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +28,15 @@ function keyCheck(): Check {
   const standard = name === "NEXT_PUBLIC_SUPABASE_ANON_KEY" || name === "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY";
   return { id: "publicKey", ok: true, detail: standard ? undefined : `found as ${name}` };
 }
+function secretKeyCheck(): Check {
+  const { name, value } = supabaseSecretKeySource;
+  const pub = supabasePublicKeySource;
+  if (!name) return { id: "secretKey", ok: false, detail: "not found in this environment (expected SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY)" };
+  if (pub.name && value === pub.value) return { id: "secretKey", ok: false, detail: `${name} and ${pub.name} hold the same key: ${pub.name} must get the publishable (anon) key, ${name} the secret key` };
+  if (looksPublic(value)) return { id: "secretKey", ok: false, detail: `${name} holds the public key: use the secret (service_role) key here` };
+  if (value.length <= 20) return { id: "secretKey", ok: false, detail: `${name} is set but too short` };
+  return { id: "secretKey", ok: true };
+}
 
 /**
  * Setup checklist for Ewan. Reports only whether things are configured (true/false), never a value.
@@ -38,7 +47,7 @@ export async function GET() {
   const envChecks: Check[] = [
     urlCheck(),
     keyCheck(),
-    { id: "secretKey", ok: env.serviceRoleKey.length > 20 && env.serviceRoleKey !== env.supabaseAnonKey },
+    secretKeyCheck(),
     { id: "appSecret", ok: env.appSecret.length >= 32 },
     { id: "rewardKey", ok: env.rewardKey.length >= 32 },
     { id: "adminEmails", ok: env.adminEmails.length > 0 },
@@ -60,10 +69,18 @@ export async function GET() {
     dbChecks.push({ id: "tables", ok: missing.length === 0, detail: missing.length ? missing.sort().join(", ") : undefined });
     try {
       const res = await fetch(`${env.supabaseUrl}/auth/v1/settings`, { headers: { apikey: env.supabaseAnonKey }, cache: "no-store", signal: AbortSignal.timeout(6000) });
-      const settings = (await res.json()) as { disable_signup?: boolean };
-      dbChecks.push({ id: "signups", ok: settings.disable_signup === true });
+      if (!res.ok) {
+        dbChecks.push({ id: "signups", ok: false, detail: `Supabase Auth answered HTTP ${res.status} (check the public key)` });
+      } else {
+        const settings = (await res.json()) as { disable_signup?: boolean };
+        dbChecks.push({
+          id: "signups",
+          ok: settings.disable_signup === true,
+          detail: settings.disable_signup === true ? undefined : "sign-ups are still open: Supabase → Authentication → Sign In / Providers → turn off “Allow new users to sign up”",
+        });
+      }
     } catch {
-      dbChecks.push({ id: "signups", ok: false, detail: "unreachable" });
+      dbChecks.push({ id: "signups", ok: false, detail: "Supabase Auth unreachable" });
     }
   }
 

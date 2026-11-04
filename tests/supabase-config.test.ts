@@ -18,3 +18,13 @@ describe("Supabase config", () => {
     expect(looksSecret("sb_publishable_abcdefghijklmnopqrstuvwxyz")).toBe(false);
   });
 });
+
+describe("public key recognition", () => {
+  it("tells a public key from a secret one", async () => {
+    const { looksPublic } = await import("@/lib/supabaseConfig");
+    expect(looksPublic("sb_publishable_abcdefghijklmnopqrstuvwxyz")).toBe(true);
+    expect(looksPublic(jwt({ role: "anon" }))).toBe(true);
+    expect(looksPublic(jwt({ role: "service_role" }))).toBe(false);
+    expect(looksPublic("sb_secret_abcdefghijklmnopqrstuvwxyz")).toBe(false);
+  });
+});
