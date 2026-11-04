@@ -35,7 +35,7 @@ function Wallet() {
   const { t } = useT();
   const lp = levelProgress(xp);
   return (
-    <Link href="/quests" className="flex items-center gap-1.5" aria-label={`${coins} ${t("common.coins")}, ${t("common.level")} ${lp.level}`}>
+    <Link href="/quests" className="flex min-h-10 items-center gap-1.5" aria-label={`${coins} ${t("common.coins")}, ${t("common.level")} ${lp.level}`}>
       <span className="chip"><span aria-hidden>🪙</span>{coins}</span>
       <span className="chip relative overflow-hidden">
         <span aria-hidden>⭐</span>{lp.level}
@@ -57,7 +57,7 @@ function TopBar() {
         <button className="btn btn-ghost btn-icon btn-sm relative z-[1] lg:hidden" onClick={() => setMore(true)} aria-label={t("nav.more")}>
           <Menu size={20} />
         </button>
-        <Link href="/home" className="logo-type relative z-[1] min-w-0 flex-1 truncate text-lg lg:text-xl">{worldName}</Link>
+        <Link href="/home" className="logo-type relative z-[1] min-w-0 flex-1 truncate py-2 text-lg lg:text-xl">{worldName}</Link>
         <div className="relative z-[1] hidden sm:block"><Wallet /></div>
         <Link href="/notifications" className="btn btn-ghost btn-icon btn-sm relative z-[1]" aria-label={`${t("nav.notifications")}${unread ? ` (${unread})` : ""}`}>
           <Bell size={20} />

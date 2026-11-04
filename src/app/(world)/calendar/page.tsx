@@ -7,6 +7,7 @@ import { useT } from "@/lib/i18n/use";
 import { PageHeader, Section } from "@/components/ui/bits";
 import { formatDay } from "@/components/ui/DayNav";
 import { dateKey, monthGrid } from "@/lib/time";
+import { useToday } from "@/lib/client/clock";
 import { uuid } from "@/lib/rooms/layout";
 import { QUEST_MAP } from "@/lib/game/rules";
 import { questName } from "@/lib/game/notify";
@@ -43,10 +44,14 @@ function DayPanel({ day }: { day: string }) {
   const [evTitle, setEvTitle] = useState("");
   const [evKind, setEvKind] = useState<EventKind>("special");
 
-  useEffect(() => {
+  // Show the saved note again when the day (or the saved note itself) changes.
+  const source = `${day}|${diary?.text ?? ""}|${diary?.mood ?? ""}`;
+  const [synced, setSynced] = useState(source);
+  if (synced !== source) {
+    setSynced(source);
     setText(diary?.text ?? "");
     setMood(diary?.mood ?? null);
-  }, [day, diary?.text, diary?.mood]);
+  }
 
   const persist = async (nextText = text, nextMood = mood) => {
     if ((diary?.text ?? "") === nextText && (diary?.mood ?? null) === nextMood) return;
@@ -137,17 +142,16 @@ export default function CalendarPage() {
   const diary = useWorld((s) => s.diary);
   const events = useWorld((s) => s.events);
   const history = useWorld((s) => s.game.history);
-  const [today, setToday] = useState("");
-  const [day, setDay] = useState("");
-  const [ym, setYm] = useState<[number, number]>([2026, 1]);
+  const today = useToday(tz);
+  // Until she picks a day or a month, the calendar follows today (also past midnight).
+  const [picked, setDay] = useState<string | null>(null);
+  const [pickedYm, setYm] = useState<[number, number] | null>(null);
+  const day = picked ?? today;
+  const ym: [number, number] = pickedYm ?? [Number(today.slice(0, 4)), Number(today.slice(5, 7))];
 
   useEffect(() => {
-    const k = dateKey(new Date(), tz);
-    setToday(k);
-    setDay(k);
-    setYm([Number(k.slice(0, 4)), Number(k.slice(5, 7))]);
     track("open_diary");
-  }, [tz, track]);
+  }, [track]);
 
   const marks = useMemo(() => {
     const m = new Map<string, Set<string>>();

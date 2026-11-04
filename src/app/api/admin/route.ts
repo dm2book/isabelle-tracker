@@ -5,6 +5,7 @@ import { fail, HttpError, ok, sameOrigin } from "@/lib/server/http";
 import { getAppSettings, saveAppSettings } from "@/lib/server/settings";
 import { createInvitation, listInvitations, revokeInvitation } from "@/lib/server/invitations";
 import { deliverGift } from "@/lib/server/gifts";
+import { createResetLink, listResets, revokeReset } from "@/lib/server/passwordResets";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +70,7 @@ async function handle(s: Session, op: string, p: unknown, origin: string) {
         encryptionReady: env.rewardKey.length >= 32,
         invitations: await listInvitations(),
         invitableEmails: env.allowedEmails,
+        resets: await listResets(new Map(people.map((p) => [p.id, p.email]))),
       };
     }
     case "gift.send": {
@@ -111,6 +113,22 @@ async function handle(s: Session, op: string, p: unknown, origin: string) {
       const { id } = z.object({ id: z.uuid() }).parse(p);
       await revokeInvitation(id);
       await audit(s, "invite.revoke", id);
+      return {};
+    }
+    case "reset.create": {
+      const { userId } = z.object({ userId: z.uuid() }).parse(p);
+      // Only for the people Ewan can send gifts to (never an admin account).
+      const people = await recipients();
+      if (!people.some((r) => r.id === userId)) throw new HttpError("invalid_recipient", 400);
+      const { id, token, expiresAt } = await createResetLink(userId, s.user.id);
+      await audit(s, "reset.create", id);
+      // Shown once to Ewan and never stored: only its hash is kept.
+      return { link: `${origin}/reset?token=${token}`, expiresAt };
+    }
+    case "reset.revoke": {
+      const { id } = z.object({ id: z.uuid() }).parse(p);
+      await revokeReset(id);
+      await audit(s, "reset.revoke", id);
       return {};
     }
     case "settings.save": {

@@ -12,7 +12,7 @@ import { uuid } from "@/lib/rooms/layout";
 import { zonedToUtc } from "@/lib/time";
 import type { GiftAnimation, GiftKind, GiftSummary } from "@/lib/types";
 
-type Tab = "overview" | "rewards" | "gift" | "gifts" | "messages" | "invites" | "settings" | "audit";
+type Tab = "overview" | "rewards" | "gift" | "gifts" | "messages" | "invites" | "resets" | "settings" | "audit";
 
 interface Overview {
   recipients: { id: string; email: string; displayName: string }[];
@@ -25,6 +25,7 @@ interface Overview {
   encryptionReady: boolean;
   invitations: { id: string; email: string; expires_at: string; used_at: string | null; revoked_at: string | null; created_at: string }[];
   invitableEmails: string[];
+  resets: { id: string; user_id: string; email: string; expires_at: string; used_at: string | null; revoked_at: string | null; created_at: string }[];
 }
 
 function InvitesPanel({ data, onChange }: { data: Overview; onChange: () => void }) {
@@ -90,6 +91,78 @@ function InvitesPanel({ data, onChange }: { data: Overview; onChange: () => void
           ))}
         </ul>
       </div>
+    </div>
+  );
+}
+
+/** Single-use password-reset links for Isabelle (no e-mail needed). The link is shown once. */
+function ResetsPanel({ data, onChange }: { data: Overview; onChange: () => void }) {
+  const { t } = useT();
+  const toast = useWorld((s) => s.toast);
+  const [userId, setUserId] = useState(data.recipients[0]?.id ?? "");
+  const [link, setLink] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const create = async () => {
+    setBusy(true);
+    try {
+      const r = await apiPost<{ link: string }>("/api/admin", { op: "reset.create", payload: { userId } });
+      setLink(r.link);
+      onChange();
+    } catch {
+      toast({ text: "common.error", tone: "error" });
+    } finally {
+      setBusy(false);
+    }
+  };
+  const copy = async () => {
+    if (!link) return;
+    await navigator.clipboard.writeText(link).catch(() => {});
+    toast({ text: t("invites.copied"), tone: "success" });
+  };
+  const share = async () => {
+    if (!link) return;
+    if (navigator.share) await navigator.share({ title: t("app.short"), text: "🔑", url: link }).catch(() => {});
+    else await copy();
+  };
+  const status = (r: Overview["resets"][number]) =>
+    r.used_at ? t("invites.used") : r.revoked_at ? t("invites.revoked") : new Date(r.expires_at) < new Date() ? t("invites.expired") : t("invites.active");
+  if (!data.recipients.length) return <p className="text-sm text-muted">{t("resets.none")}</p>;
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted">{t("resets.hint")}</p>
+      <div className="flex flex-wrap gap-2">
+        <select className="field max-w-xs" value={userId} onChange={(e) => { setUserId(e.target.value); setLink(null); }} aria-label={t("admin.recipient")}>
+          {data.recipients.map((r) => <option key={r.id} value={r.id}>{r.displayName || r.email}</option>)}
+        </select>
+        <button className="btn btn-primary" disabled={busy || !userId} onClick={create}>🔑 {t("resets.create")}</button>
+      </div>
+      {link && (
+        <div className="card-flat space-y-2 p-3">
+          <p className="text-sm font-bold">{t("resets.link")}</p>
+          <p className="font-mono text-xs break-all select-all">{link}</p>
+          <div className="flex gap-2">
+            <button className="btn btn-primary btn-sm" onClick={share}>📤 {t("invites.share")}</button>
+            <button className="btn btn-ghost btn-sm" onClick={copy}>{t("invites.copy")}</button>
+          </div>
+        </div>
+      )}
+      {data.resets.length > 0 && (
+        <div>
+          <p className="title mb-2 text-sm">{t("resets.list")}</p>
+          <ul className="space-y-2">
+            {data.resets.map((r) => (
+              <li key={r.id} className="card-flat flex flex-wrap items-center gap-2 p-2.5 text-sm">
+                <span className="min-w-0 flex-1 truncate font-bold">{r.email}</span>
+                <span className="text-xs text-muted">{fmt(r.created_at)}</span>
+                <span className="chip">{status(r)}</span>
+                {!r.used_at && !r.revoked_at && new Date(r.expires_at) > new Date() && (
+                  <button className="btn btn-ghost btn-sm" onClick={async () => { await apiPost("/api/admin", { op: "reset.revoke", payload: { id: r.id } }); onChange(); }}>{t("invites.revoke")}</button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
@@ -254,8 +327,19 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (status === "auth") window.location.href = "/login";
-    if (status === "ready" && mode === "cloud" && isAdmin) load();
-  }, [status, mode, isAdmin, load]);
+    if (!(status === "ready" && mode === "cloud" && isAdmin)) return;
+    let alive = true;
+    apiPost<Overview>("/api/admin", { op: "overview" })
+      .then((d) => {
+        if (!alive) return;
+        setData(d);
+        setSettings(d.settings);
+      })
+      .catch(() => alive && setData(null));
+    return () => {
+      alive = false;
+    };
+  }, [status, mode, isAdmin]);
 
   const nameOf = useMemo(() => (id: string) => data?.recipients.find((r) => r.id === id)?.displayName ?? id.slice(0, 6), [data]);
 
@@ -282,7 +366,7 @@ export default function AdminPage() {
       ) : (
         <>
           <div className="no-scrollbar -mx-4 mb-4 flex gap-2 overflow-x-auto px-4" role="tablist">
-            {(["overview", "invites", "rewards", "gift", "gifts", "messages", "settings", "audit"] as Tab[]).map((x) => (
+            {(["overview", "invites", "resets", "rewards", "gift", "gifts", "messages", "settings", "audit"] as Tab[]).map((x) => (
               <button key={x} role="tab" aria-selected={tab === x} className={`btn btn-sm shrink-0 ${tab === x ? "btn-primary" : "btn-ghost"}`} onClick={() => { setTab(x); if (x !== "gift") setPreset(null); }}>{t(`admin.tabs.${x}`)}</button>
             ))}
           </div>
@@ -302,6 +386,7 @@ export default function AdminPage() {
           )}
 
           {tab === "invites" && <Section title={t("invites.title")}><InvitesPanel data={data} onChange={load} /></Section>}
+          {tab === "resets" && <Section title={t("resets.title")}><ResetsPanel data={data} onChange={load} /></Section>}
 
           {tab === "rewards" && (
             <Section title={t("admin.events")}>

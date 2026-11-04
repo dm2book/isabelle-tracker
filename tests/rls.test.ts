@@ -118,10 +118,23 @@ const A = "00000000-0000-0000-0000-00000000000a";
   check("users cannot forge import records", !!r.error);
   r = await as("service_role", null, `select count(*)::int as n from public.invitations`);
   check("server can manage invitations", !r.error && r.rows[0].n === 1, r.error);
+
+  // Password-reset links are server-only too: nobody can read, create or reuse one from an account.
+  await db.exec(`insert into public.password_resets (user_id, token_hash, expires_at) values ('${A}', 'r1', now() + interval '1 day')`);
+  r = await as("authenticated", A, `select * from public.password_resets`);
+  check("reset links unreadable by users", !!r.error);
+  r = await as("anon", null, `select * from public.password_resets`);
+  check("reset links unreadable anonymously", !!r.error);
+  r = await as("authenticated", A, `insert into public.password_resets (user_id, token_hash, expires_at) values ('${A}', 'r2', now() + interval '1 day')`);
+  check("users cannot create reset links", !!r.error);
+  r = await as("authenticated", A, `update public.password_resets set used_at = null`);
+  check("users cannot re-arm a used reset link", !!r.error);
+  r = await as("service_role", null, `select count(*)::int as n from public.password_resets`);
+  check("server can manage reset links", !r.error && r.rows[0].n === 1, r.error);
   
   // Account deletion cascades
   await db.exec(`delete from auth.users where id = '${A}'`);
-  const left = await db.query<{ n: number }>(`select (select count(*) from public.food_entries)::int + (select count(*) from public.gift_deliveries)::int + (select count(*) from public.game_states)::int as n`);
+  const left = await db.query<{ n: number }>(`select (select count(*) from public.food_entries)::int + (select count(*) from public.gift_deliveries)::int + (select count(*) from public.game_states)::int + (select count(*) from public.password_resets)::int as n`);
   check("deleting the account erases her data (cascade)", left.rows[0].n === 0, `${left.rows[0].n} rows left`);
   
   

@@ -1,7 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useToday } from "@/lib/client/clock";
 import { useWorld } from "@/store/world";
 import { useT } from "@/lib/i18n/use";
 import { PageHeader, Section } from "@/components/ui/bits";
@@ -171,8 +172,7 @@ export default function SurprisesPage() {
   const openLetter = useWorld((s) => s.openLetter);
   const setOverlay = useWorld((s) => s.setOverlay);
   const [letter, setLetter] = useState<Letter | null>(null);
-  const [today, setToday] = useState("");
-  useEffect(() => setToday(dateKey(new Date(), tz)), [tz]);
+  const today = useToday(tz);
 
   const season = today ? currentSeason(today) : null;
   const birthday = today ? isBirthday(today, profile.birthday) : false;

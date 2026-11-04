@@ -25,17 +25,22 @@ export function LiveCompanion({ size = 190, idleSay, className = "" }: { size?: 
     return () => clearInterval(id);
   }, [tz]);
 
-  useEffect(() => {
-    if (!cue.key) return;
+  // A new cue (hug, eating, celebrating…) plays once, then the companion returns to idle.
+  const [seenCue, setSeenCue] = useState(0);
+  if (cue.key && cue.key !== seenCue) {
+    setSeenCue(cue.key);
     setAnim(cue.anim);
     setSay(cue.say);
     setKey((k) => k + 1);
+  }
+  useEffect(() => {
+    if (!cue.key) return;
     const tm = setTimeout(() => {
       setAnim(null);
       setSay(null);
     }, 3200);
     return () => clearTimeout(tm);
-  }, [cue]);
+  }, [cue.key]);
 
   const idleAnim: CompanionAnim | null = period === "night" ? "sleep" : null;
 

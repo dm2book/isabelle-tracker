@@ -14,18 +14,16 @@ import { ApiError, apiGet, apiPost, rpc } from "@/lib/client/api";
 import { dateKey } from "@/lib/time";
 import { uuid } from "@/lib/rooms/layout";
 import { secretRoom } from "@/lib/rooms/templates";
+import { addReward, ERROR_VISIBLE_MS, pushToast, REWARD_VISIBLE_MS, TOAST_VISIBLE_MS, type Toast } from "@/lib/toasts";
 
 const LOCAL_KEY = "ihkw:world:v1";
+/** Last mode reported by the server, so a cloud app never falls back to the device copy when offline. */
+const MODE_KEY = "ihkw:mode";
 
 export type CompanionAnim =
   | "wave" | "dance" | "kiss" | "hug" | "celebrate" | "sleep" | "eat" | "drink" | "present" | "play" | "poke";
 
-export interface Toast {
-  id: string;
-  text: string;
-  emoji?: string;
-  tone?: "info" | "success" | "reward" | "error";
-}
+export type { Toast } from "@/lib/toasts";
 
 interface OpResult {
   game?: GameState;
@@ -46,6 +44,8 @@ export interface WorldState extends WorldSnapshot {
 
   boot: () => Promise<void>;
   toast: (t: Omit<Toast, "id">) => void;
+  /** Show earned XP/coins: merged into one toast that updates while visible. */
+  reward: (add: { xp?: number; coins?: number }) => void;
   dismissToast: (id: string) => void;
   cue: (anim: CompanionAnim | null, say?: string | null) => void;
   setOverlay: (patch: Partial<WorldState["overlay"]>) => void;
@@ -140,7 +140,14 @@ function debounceCloud(key: string, fn: () => void, ms = 900) {
   cloudTimers.set(key, setTimeout(() => { cloudTimers.delete(key); fn(); }, ms));
 }
 
+const toastTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
 export const useWorld = create<WorldState>()((set, get) => {
+  const retime = (id: string, ms: number) => {
+    const prev = toastTimers.get(id);
+    if (prev) clearTimeout(prev);
+    toastTimers.set(id, setTimeout(() => get().dismissToast(id), ms));
+  };
   const writeLocal = () => {
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = null;
@@ -223,10 +230,28 @@ export const useWorld = create<WorldState>()((set, get) => {
     pendingEffects: [],
 
     async boot() {
+      if (get().status === "error") set({ status: "boot" });
       let config: PublicConfig;
       try {
         config = await apiGet<PublicConfig>("/api/config");
+        try {
+          localStorage.setItem(MODE_KEY, config.mode);
+        } catch {
+          /* storage unavailable */
+        }
       } catch {
+        // No connection. If this app was online (cloud) before, never fall back to the device copy:
+        // that would show an old world. Wait for the connection instead (the boot screen retries).
+        let last: string | null = null;
+        try {
+          last = localStorage.getItem(MODE_KEY);
+        } catch {
+          /* storage unavailable */
+        }
+        if (last === "cloud") {
+          set({ mode: "cloud", status: "error" });
+          return;
+        }
         config = { mode: "local", pushConfigured: false, vapidPublicKey: null, robuxProgram: false, heartCap: DEFAULT_HEART_CAP, robuxWeeklyCap: 1 };
       }
       set({ config, mode: config.mode });
@@ -262,10 +287,20 @@ export const useWorld = create<WorldState>()((set, get) => {
 
     toast(t) {
       const id = uuid();
-      set((s) => ({ toasts: [...s.toasts.slice(-3), { ...t, id }] }));
-      setTimeout(() => get().dismissToast(id), t.tone === "error" ? 5000 : 3600);
+      set((s) => ({ toasts: pushToast(s.toasts, { ...t, id }) }));
+      retime(id, t.tone === "error" ? ERROR_VISIBLE_MS : TOAST_VISIBLE_MS);
+    },
+    reward(add) {
+      if (!(add.xp || add.coins)) return;
+      const r = addReward(get().toasts, add, uuid());
+      set({ toasts: r.toasts });
+      // Each new reward restarts the short timer, so the toast stays while points keep coming in.
+      retime(r.id, REWARD_VISIBLE_MS);
     },
     dismissToast(id) {
+      const timer = toastTimers.get(id);
+      if (timer) clearTimeout(timer);
+      toastTimers.delete(id);
       set((s) => ({ toasts: s.toasts.filter((x) => x.id !== id) }));
     },
     cue(anim, say = null) {

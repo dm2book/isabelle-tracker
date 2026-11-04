@@ -53,7 +53,6 @@ function ThemesTab() {
   const { t } = useT();
   const prefs = useWorld((s) => s.prefs);
   const owned = useWorld((s) => s.game.owned);
-  const coins = useWorld((s) => s.game.coins);
   const updatePrefs = useWorld((s) => s.updatePrefs);
   const gameAction = useWorld((s) => s.gameAction);
   const systemDark = useUi((s) => s.systemDark);
@@ -94,7 +93,7 @@ function ThemesTab() {
           {active ? (
             <span className="chip text-xs"><Check size={12} /> {t("studio.using")}</span>
           ) : (
-            <button className="btn btn-soft btn-sm min-h-8 px-3 text-xs" onClick={() => apply(th)} disabled={locked && coins < (th.price ?? 0)}>
+            <button className="btn btn-soft btn-sm min-h-9 px-3 text-xs" onClick={() => apply(th)}>
               {locked ? <><Lock size={12} /> {th.price}</> : t("studio.applyTheme")}
             </button>
           )}

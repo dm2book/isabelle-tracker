@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Download, Upload } from "lucide-react";
 import { useWorld } from "@/store/world";
 import { useT } from "@/lib/i18n/use";
@@ -13,18 +13,18 @@ export function ImportPanel({ onDone, showFile = true }: { onDone?: () => void; 
   const { t, lang } = useT();
   const email = useWorld((s) => s.email);
   const boot = useWorld((s) => s.boot);
-  const [device, setDevice] = useState<ReturnType<typeof readDeviceWorld>>(null);
-  const [doneAt, setDoneAt] = useState<string | null>(null);
+  // The device copy never changes while signed in (online mode never writes it), so read it once.
+  const device = useMemo(() => {
+    const w = readDeviceWorld();
+    return hasMeaningfulWorld(w) ? w : null;
+  }, []);
+  const storedDoneAt = useMemo(() => importedAt(email), [email]);
+  const [justDone, setDoneAt] = useState<string | null>(null);
+  const doneAt = justDone ?? storedDoneAt;
   const [progress, setProgress] = useState<[number, number] | null>(null);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const w = readDeviceWorld();
-    setDevice(hasMeaningfulWorld(w) ? w : null);
-    setDoneAt(importedAt(email));
-  }, [email]);
 
   const start = async (w: NonNullable<typeof device>, source: "device" | "file") => {
     setError(null);
@@ -100,26 +100,25 @@ export function ImportBanner() {
   const { t } = useT();
   const mode = useWorld((s) => s.mode);
   const email = useWorld((s) => s.email);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (mode !== "cloud" || !email) return;
+  const [hidden, setHidden] = useState(false);
+  const eligible = useMemo(() => {
+    if (mode !== "cloud" || !email) return false;
     let dismissed = false;
     try {
       dismissed = sessionStorage.getItem("ihkw:import-later") === "1";
     } catch {
       /* ignore */
     }
-    setVisible(!dismissed && hasMeaningfulWorld(readDeviceWorld()) && !importedAt(email));
+    return !dismissed && hasMeaningfulWorld(readDeviceWorld()) && !importedAt(email);
   }, [mode, email]);
 
-  if (!visible) return null;
+  if (!eligible || hidden) return null;
   return (
     <section className="card mb-4 p-4" aria-labelledby="import-title">
       <div className="relative z-[1] space-y-2">
         <h2 id="import-title" className="title text-lg">{t("migrate.title")}</h2>
         <p className="text-sm">{t("migrate.body")}</p>
-        <ImportPanel showFile={false} onDone={() => setTimeout(() => setVisible(false), 4000)} />
+        <ImportPanel showFile={false} onDone={() => setTimeout(() => setHidden(true), 4000)} />
         <button
           className="text-sm font-bold text-muted underline"
           onClick={() => {
@@ -128,7 +127,7 @@ export function ImportBanner() {
             } catch {
               /* ignore */
             }
-            setVisible(false);
+            setHidden(true);
           }}
         >
           {t("migrate.later")}

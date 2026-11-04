@@ -1,14 +1,15 @@
 "use client";
 
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useToday } from "@/lib/client/clock";
 import { Trash2 } from "lucide-react";
 import { useWorld } from "@/store/world";
 import { useT } from "@/lib/i18n/use";
 import { PageHeader, Section, Empty, Toggle } from "@/components/ui/bits";
 import { DayNav, MiniBars, formatDay } from "@/components/ui/DayNav";
 import { Burst } from "@/components/effects/Burst";
-import { dateKey, timeKey, weekDays } from "@/lib/time";
+import { timeKey, weekDays } from "@/lib/time";
 import { uuid } from "@/lib/rooms/layout";
 import { play } from "@/lib/sound";
 import type { WaterEntry } from "@/lib/types";
@@ -70,16 +71,11 @@ export default function WaterPage() {
   const updatePrefs = useWorld((s) => s.updatePrefs);
   const cue = useWorld((s) => s.cue);
   const toast = useWorld((s) => s.toast);
-  const [today, setToday] = useState("");
-  const [day, setDay] = useState("");
+  const today = useToday(prefs.timezone);
+  const [picked, setDay] = useState<string | null>(null);
+  const day = picked ?? today;
   const [custom, setCustom] = useState("");
   const [burst, setBurst] = useState(0);
-
-  useEffect(() => {
-    const k = dateKey(new Date(), prefs.timezone);
-    setToday(k);
-    setDay(k);
-  }, [prefs.timezone]);
 
   const byDay = useMemo(() => {
     const m = new Map<string, WaterEntry[]>();

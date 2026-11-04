@@ -242,6 +242,11 @@ body::before {
     border: 2px solid var(--c-border);
   }
 
+  /* Tappable chips (filters, moods…) get a finger-friendly height on phones. */
+  button.chip,
+  a.chip {
+    min-height: 36px;
+  }
   .chip {
     display: inline-flex;
     align-items: center;
@@ -264,6 +269,12 @@ body::before {
     color: var(--c-text);
     font: inherit;
     transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  /* iPhone/iPad Safari zooms the page into any field whose text is under 16px: never let it. */
+  @supports (-webkit-touch-callout: none) {
+    .field {
+      font-size: max(16px, 1em);
+    }
   }
   .field::placeholder { color: color-mix(in oklab, var(--c-muted) 75%, transparent); }
   .field:focus {
@@ -310,6 +321,16 @@ body::before {
     paint-order: stroke fill;
     -webkit-text-stroke: 0.16em var(--c-surface);
     text-shadow: 0 0.09em 0 color-mix(in oklab, var(--c-primary) 55%, transparent);
+  }
+  /* Text sitting directly on a <Sky>: readable on its pastel or night gradient in every theme. */
+  .on-sky {
+    color: var(--sky-ink, var(--c-text));
+  }
+  .on-sky-soft {
+    color: var(--sky-ink-soft, var(--c-muted));
+  }
+  .logo-type.on-sky {
+    -webkit-text-stroke-color: var(--sky-stroke, var(--c-surface));
   }
 
   .title {

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { usePeriod, useToday } from "@/lib/client/clock";
 import { motion } from "motion/react";
 import { useWorld } from "@/store/world";
 import { useT } from "@/lib/i18n/use";
@@ -10,7 +11,7 @@ import { LiveCompanion } from "@/components/companion/LiveCompanion";
 import { RoomThumb } from "@/components/room/RoomCanvas";
 import { ProgressBar } from "@/components/ui/bits";
 import { Burst } from "@/components/effects/Burst";
-import { dateKey, dayPeriod, hashString, type DayPeriod } from "@/lib/time";
+import { hashString, type DayPeriod } from "@/lib/time";
 import { activeQuests } from "@/lib/game/rules";
 import { questName } from "@/lib/game/notify";
 import { currentSeason, isBirthday } from "@/lib/seasons";
@@ -26,13 +27,8 @@ export default function HomePage() {
   const letters = useWorld((s) => s.letters);
   const gifts = useWorld((s) => s.gifts);
   const setOverlay = useWorld((s) => s.setOverlay);
-  const [period, setPeriod] = useState<DayPeriod>("afternoon");
-  const [today, setToday] = useState("");
-
-  useEffect(() => {
-    setPeriod(dayPeriod(new Date(), prefs.timezone));
-    setToday(dateKey(new Date(), prefs.timezone));
-  }, [prefs.timezone]);
+  const period: DayPeriod = usePeriod(prefs.timezone);
+  const today = useToday(prefs.timezone);
 
   const msgs = tl(`greet.${period}Msgs` as never);
   const greetMsg = msgs.length ? msgs[hashString(today) % msgs.length] : "";
@@ -57,10 +53,10 @@ export default function HomePage() {
         <Sky period={prefs.ui.effects.timeOfDay ? period : "afternoon"} className="relative min-h-[22rem] px-5 pt-6 pb-0 sm:min-h-[24rem]">
           {birthday && <Burst kind="confetti" count={30} spread={260} burstKey={sparkleKey} />}
           <div className="relative z-[1] pr-20 sm:pr-28">
-            <h1 className={`logo-type text-[1.9rem] leading-tight sm:text-4xl ${period === "night" ? "" : ""}`}>
+            <h1 className="logo-type on-sky text-[1.9rem] leading-tight sm:text-4xl">
               {birthday ? t("home.birthday", { name: profile.displayName }) : t(`greet.${period}` as never, { name: profile.displayName })}
             </h1>
-            <p className={`mt-1 max-w-md font-semibold ${period === "night" ? "text-white/90" : "text-ink/80"}`}>{birthday ? t("home.birthdaySub") : greetMsg}</p>
+            <p className="on-sky-soft mt-1 max-w-md font-semibold">{birthday ? t("home.birthdaySub") : greetMsg}</p>
           </div>
           <div className="relative z-[1] mt-2 flex items-end justify-center">
             <LiveCompanion size={180} />

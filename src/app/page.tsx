@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
+import { usePeriod } from "@/lib/client/clock";
 import { useWorld } from "@/store/world";
 import { useT } from "@/lib/i18n/use";
 import { Companion } from "@/components/companion/Companion";
 import { Sky } from "@/components/home/Sky";
 import { BootScreen } from "@/components/shell/BootScreen";
-import { dayPeriod } from "@/lib/time";
 import { BUILT_IN_THEMES } from "@/lib/theme/themes";
 import { BOW_COLORS } from "@/lib/catalog/wardrobe";
 import { LANGS } from "@/lib/i18n";
@@ -129,16 +129,12 @@ export default function Welcome() {
   const tz = useWorld((s) => s.prefs.timezone);
   const router = useRouter();
   const { t } = useT();
-  const [period, setPeriod] = useState<ReturnType<typeof dayPeriod>>("afternoon");
+  const period = usePeriod(tz);
   const [waveKey, setWaveKey] = useState(0);
   // A new online account on a device that already holds her world: offer the import before onboarding.
-  const [deviceWorld, setDeviceWorld] = useState(false);
+  // (This page only renders after boot, in the browser, so reading the device copy here is safe.)
+  const deviceWorld = useMemo(() => mode === "cloud" && hasMeaningfulWorld(readDeviceWorld()), [mode]);
   const [freshStart, setFreshStart] = useState(false);
-  useEffect(() => {
-    if (mode === "cloud") setDeviceWorld(hasMeaningfulWorld(readDeviceWorld()));
-  }, [mode]);
-
-  useEffect(() => setPeriod(dayPeriod(new Date(), tz)), [tz]);
   useEffect(() => {
     if (status === "auth") router.replace("/login");
   }, [status, router]);
@@ -165,7 +161,7 @@ export default function Welcome() {
       ) : !profile.onboarded ? (
         <div className="relative z-[1] flex w-full flex-col items-center gap-4">
           <Companion look={look} anim="wave" animKey={1} size={140} />
-          <h1 className="logo-type text-center text-3xl">{t("app.name")}</h1>
+          <h1 className="logo-type on-sky text-center text-3xl">{t("app.name")}</h1>
           <Onboarding />
         </div>
       ) : (
@@ -176,14 +172,14 @@ export default function Welcome() {
             </svg>
             <Companion look={look} anim="wave" animKey={waveKey} size={210} onClick={() => setWaveKey((k) => k + 1)} label={look.name} />
           </motion.div>
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className={`title mt-10 text-xl ${period === "night" ? "text-white" : ""}`}>
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="title on-sky mt-10 text-xl">
             {t("welcome.hello", { name: profile.displayName })}
           </motion.p>
           <motion.h1
             initial={{ opacity: 0, y: 20, rotate: -2 }}
             animate={{ opacity: 1, y: 0, rotate: 0 }}
             transition={{ delay: 0.8, type: "spring" }}
-            className="logo-type mt-2 max-w-xl text-[2.6rem] leading-[1.05] sm:text-6xl"
+            className="logo-type on-sky mt-2 max-w-xl text-[2.6rem] leading-[1.05] sm:text-6xl"
           >
             {profile.worldName}
           </motion.h1>

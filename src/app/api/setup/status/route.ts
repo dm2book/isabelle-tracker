@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 const TABLES = [
   "profiles", "preferences", "rooms", "food_entries", "water_entries", "diary_entries", "calendar_events", "scrapbook_entries",
   "game_states", "reward_events", "reward_codes", "gift_deliveries", "scheduled_messages", "notifications", "push_subscriptions",
-  "reminder_log", "app_settings", "admin_audit", "invitations", "account_imports",
+  "reminder_log", "app_settings", "admin_audit", "invitations", "account_imports", "password_resets",
 ] as const;
 
 type Check = { id: string; ok: boolean; detail?: string };
@@ -66,7 +66,10 @@ export async function GET() {
         if (error) missing.push(t);
       }),
     );
-    dbChecks.push({ id: "tables", ok: missing.length === 0, detail: missing.length ? missing.sort().join(", ") : undefined });
+    // Name the migration file to run for whatever is missing.
+    const fileOf = (t: string) => (t === "password_resets" ? "0004" : t === "invitations" || t === "account_imports" ? "0003" : "0001");
+    const files = [...new Set(missing.map(fileOf))].sort();
+    dbChecks.push({ id: "tables", ok: missing.length === 0, detail: missing.length ? `missing: ${missing.sort().join(", ")} → run migration ${files.join(", ")} in the Supabase SQL Editor` : undefined });
     try {
       const res = await fetch(`${env.supabaseUrl}/auth/v1/settings`, { headers: { apikey: env.supabaseAnonKey }, cache: "no-store", signal: AbortSignal.timeout(6000) });
       if (!res.ok) {

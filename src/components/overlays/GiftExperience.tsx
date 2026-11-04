@@ -53,13 +53,19 @@ export function GiftExperience() {
   const [kept, setKept] = useState(false);
   const [burstKey, setBurstKey] = useState(0);
 
-  useEffect(() => {
-    if (!gift) return;
+  // Each new gift starts the experience from the beginning.
+  const [shownGift, setShownGift] = useState<typeof gift>(null);
+  if (gift && gift !== shownGift) {
+    setShownGift(gift);
     setStep("arrive");
     setCode(null);
     setErr(null);
     setCopied(false);
     setKept(false);
+  }
+
+  useEffect(() => {
+    if (!gift) return;
     play("chime");
     if (!preview) openGift(gift.id);
     const a = setTimeout(() => setStep("walk"), 1600);

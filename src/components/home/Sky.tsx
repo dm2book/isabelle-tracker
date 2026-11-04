@@ -26,7 +26,18 @@ export function Sky({ period, className = "", children }: { period: DayPeriod; c
   const stars = useMemo(() => Array.from({ length: 26 }, (_, i) => ({ x: (i * 37) % 100, y: (i * 53) % 60, s: 2 + (i % 3), d: (i % 7) * 0.4 })), []);
   const night = period === "night";
   return (
-    <div className={`relative overflow-hidden ${className}`} style={{ background: `linear-gradient(180deg, ${a}, ${b} 55%, ${c})` }}>
+    <div
+      className={`relative overflow-hidden ${className}`}
+      data-sky={night ? "dark" : "light"}
+      // Text placed directly on the sky (class "on-sky") follows the sky, not the light/dark theme:
+      // pastel skies get dark ink, the night sky gets white.
+      style={{
+        background: `linear-gradient(180deg, ${a}, ${b} 55%, ${c})`,
+        ["--sky-ink" as string]: night ? "#FFFFFF" : "#3F1F38",
+        ["--sky-ink-soft" as string]: night ? "rgba(255,255,255,0.9)" : "#5E3555",
+        ["--sky-stroke" as string]: night ? "#1F1A45" : "#FFFFFF",
+      }}
+    >
       {night &&
         stars.map((s, i) => (
           <span key={i} className="animate-twinkle anim-loop absolute rounded-full bg-[#FFF4C2]" style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.s, height: s.s, animationDelay: `${s.d}s` }} aria-hidden />

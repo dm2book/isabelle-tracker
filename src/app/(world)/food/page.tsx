@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useToday } from "@/lib/client/clock";
 import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useWorld } from "@/store/world";
 import { useT } from "@/lib/i18n/use";
@@ -8,7 +9,7 @@ import { PageHeader, Section, Seg, Toggle, Empty } from "@/components/ui/bits";
 import { Sheet } from "@/components/ui/Sheet";
 import { DayNav, MiniBars, formatDay } from "@/components/ui/DayNav";
 import { apiGet } from "@/lib/client/api";
-import { dateKey, monthGrid, timeKey, weekDays } from "@/lib/time";
+import { monthGrid, timeKey, weekDays } from "@/lib/time";
 import { uuid } from "@/lib/rooms/layout";
 import { play } from "@/lib/sound";
 import type { FoodEntry, MealType } from "@/lib/types";
@@ -31,24 +32,28 @@ function FoodSearch({ onUse }: { onUse: (name: string, portion: string, kcal: nu
   const [pick, setPick] = useState<OffItem | null>(null);
   const [grams, setGrams] = useState("100");
 
+  const short = q.trim().length < 2;
   useEffect(() => {
-    if (q.trim().length < 2) {
-      setItems(null);
-      return;
-    }
+    if (short) return;
+    let alive = true; // ignore answers to an older search that arrive late
     const tm = setTimeout(async () => {
       setBusy(true);
       setErr(false);
       try {
-        setItems(await apiGet<OffItem[]>(`/api/food/search?q=${encodeURIComponent(q)}&lang=${lang}`));
+        const found = await apiGet<OffItem[]>(`/api/food/search?q=${encodeURIComponent(q)}&lang=${lang}`);
+        if (alive) setItems(found);
       } catch {
-        setErr(true);
+        if (alive) setErr(true);
       } finally {
-        setBusy(false);
+        if (alive) setBusy(false);
       }
     }, 450);
-    return () => clearTimeout(tm);
-  }, [q, lang]);
+    return () => {
+      alive = false;
+      clearTimeout(tm);
+    };
+  }, [q, lang, short]);
+  const results = short ? null : items;
 
   const g = Number(grams);
   const kcal = pick?.kcal100 != null && g > 0 ? Math.round((pick.kcal100 * g) / 100) : null;
@@ -61,8 +66,8 @@ function FoodSearch({ onUse }: { onUse: (name: string, portion: string, kcal: nu
         <input className="field pl-9" value={q} onChange={(e) => { setQ(e.target.value); setPick(null); }} placeholder={t("food.searchPlaceholder")} aria-label={t("food.searchTitle")} />
       </label>
       <p className="text-xs text-muted">{t("food.searchHint")}</p>
-      {busy && <div className="skeleton h-10" />}
-      {err && <p className="text-sm text-muted">{t("food.searchUnavailable")}</p>}
+      {busy && !short && <div className="skeleton h-10" />}
+      {err && !short && <p className="text-sm text-muted">{t("food.searchUnavailable")}</p>}
       {pick ? (
         <div className="space-y-2">
           <p className="font-bold">{pick.name} {pick.brand && <span className="text-muted">· {pick.brand}</span>}</p>
@@ -79,10 +84,10 @@ function FoodSearch({ onUse }: { onUse: (name: string, portion: string, kcal: nu
           <p className="text-[0.7rem] text-muted">{t("food.source")}</p>
         </div>
       ) : (
-        items && (
+        results && (
           <ul className="max-h-56 space-y-1 overflow-y-auto">
-            {items.length === 0 && <li className="text-sm text-muted">{t("editor.noResults")}</li>}
-            {items.map((it) => (
+            {results.length === 0 && <li className="text-sm text-muted">{t("editor.noResults")}</li>}
+            {results.map((it) => (
               <li key={`${it.code}-${it.name}`}>
                 <button className="flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-surface" onClick={() => setPick(it)}>
                   <span className="min-w-0 flex-1 truncate text-sm font-bold">{it.name}{it.brand && <span className="font-normal text-muted"> · {it.brand}</span>}</span>
@@ -107,12 +112,13 @@ function EntrySheet({ open, onClose, initial, day }: { open: boolean; onClose: (
   const [e, setE] = useState<Partial<FoodEntry>>({});
   const [searching, setSearching] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      setE({ meal: "lunch", name: "", portion: "", calories: null, notes: "", time: timeKey(new Date(), tz), source: "manual", ...initial });
-      setSearching(false);
-    }
-  }, [open, initial, tz]);
+  // Fresh form each time the sheet opens (every open passes a new `initial` object).
+  const [openedWith, setOpenedWith] = useState<Partial<FoodEntry> | null>(null);
+  if (open && initial !== openedWith) {
+    setOpenedWith(initial);
+    setE({ meal: "lunch", name: "", portion: "", calories: null, notes: "", time: timeKey(new Date(), tz), source: "manual", ...initial });
+    setSearching(false);
+  }
 
   const valid = (e.name ?? "").trim().length > 0;
   const save = async () => {
@@ -180,15 +186,10 @@ export default function FoodPage() {
   const food = useWorld((s) => s.food);
   const deleteFood = useWorld((s) => s.deleteFood);
   const updatePrefs = useWorld((s) => s.updatePrefs);
-  const [today, setToday] = useState("");
-  const [day, setDay] = useState("");
+  const today = useToday(prefs.timezone);
+  const [picked, setDay] = useState<string | null>(null);
+  const day = picked ?? today;
   const [sheet, setSheet] = useState<Partial<FoodEntry> | null>(null);
-
-  useEffect(() => {
-    const k = dateKey(new Date(), prefs.timezone);
-    setToday(k);
-    setDay(k);
-  }, [prefs.timezone]);
 
   const byDay = useMemo(() => {
     const m = new Map<string, FoodEntry[]>();
@@ -288,7 +289,7 @@ export default function FoodPage() {
           <div className="grid grid-cols-7 gap-1 text-center text-xs">
             {grid.map((d, i) =>
               d ? (
-                <button key={d} disabled={d > today} onClick={() => setDay(d)} className={`aspect-square rounded-lg font-bold ${d === day ? "bg-primary text-on-primary" : byDay.has(d) ? "bg-accent/40" : "bg-surface2"} ${d > today ? "opacity-30" : ""}`} aria-label={formatDay(d, lang)}>
+                <button key={d} disabled={d > today} onClick={() => setDay(d)} className={`aspect-square rounded-lg font-bold ${d === day ? "bg-primary text-on-primary" : byDay.has(d) ? "bg-accent/40" : "bg-surface2"} ${d > today ? "opacity-45" : ""}`} aria-label={formatDay(d, lang)}>
                   {Number(d.slice(8))}
                 </button>
               ) : (

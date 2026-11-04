@@ -42,8 +42,7 @@ function LoginInner() {
         await apiPost("/api/auth/signin", { email, password });
         window.location.href = "/";
       } else if (view === "forgot") {
-        await apiPost("/api/auth/reset", { email });
-        setMsg(t("auth.resetSent"));
+        return;
       } else {
         if (password.length < 8) throw new ApiError("weak", "weak", 400);
         await apiPost("/api/auth/password", { password });
@@ -75,6 +74,15 @@ function LoginInner() {
                 <p className="text-sm">{t("auth.notConfigured")}</p>
                 <Link href="/" className="btn btn-primary w-full">{t("auth.continueLocal")}</Link>
               </div>
+            ) : view === "forgot" ? (
+              // No e-mail reset: Supabase's built-in mail would never reach her. Ewan makes a
+              // single-use link in Espace Ewan and sends it to her.
+              <div className="space-y-3 text-center">
+                <p className="text-4xl" aria-hidden>🔑</p>
+                <p className="font-bold">{t("auth.forgotTitle")}</p>
+                <p className="text-sm text-muted">{t("auth.forgotHint")}</p>
+                <button type="button" className="btn btn-primary w-full" onClick={() => setView("signin")}>{t("common.back")}</button>
+              </div>
             ) : (
               <form onSubmit={submit} className="space-y-3">
                 {view !== "newpass" && (
@@ -83,26 +91,23 @@ function LoginInner() {
                     <input className="field" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
                   </label>
                 )}
-                {view !== "forgot" && (
-                  <label className="block">
-                    <span className="label">{view === "newpass" ? t("auth.newPassword") : t("auth.password")}</span>
-                    <input className="field" type="password" autoComplete={view === "signin" ? "current-password" : "new-password"} required minLength={view === "signin" ? 1 : 8} value={password} onChange={(e) => setPassword(e.target.value)} />
-                  </label>
-                )}
+                <label className="block">
+                  <span className="label">{view === "newpass" ? t("auth.newPassword") : t("auth.password")}</span>
+                  <input className="field" type="password" autoComplete={view === "signin" ? "current-password" : "new-password"} required minLength={view === "signin" ? 1 : 8} value={password} onChange={(e) => setPassword(e.target.value)} />
+                </label>
                 {msg && <p className="rounded-xl bg-surface2 p-2 text-center text-sm font-bold" role="alert">{msg}</p>}
                 <button className="btn btn-primary w-full" disabled={busy} type="submit">
-                  {view === "signin" ? t("auth.signIn") : view === "forgot" ? t("common.confirm") : t("auth.setPassword")}
+                  {view === "signin" ? t("auth.signIn") : t("auth.setPassword")}
                 </button>
                 <div className="flex flex-col items-center gap-1 pt-1 text-sm font-bold">
                   {view === "signin" && <p className="text-center font-normal text-muted">💌 {t("auth.inviteOnly")}</p>}
                   {view === "signin" && <button type="button" className="text-muted underline" onClick={() => setView("forgot")}>{t("auth.forgot")}</button>}
-                  {view === "forgot" && <button type="button" className="text-muted underline" onClick={() => setView("signin")}>{t("common.back")}</button>}
                 </div>
               </form>
             )}
           </div>
         </div>
-        <p className="mt-4 text-center text-xs"><Link href="/privacy" className="underline">{t("nav.privacy")}</Link></p>
+        <p className="on-sky mt-3 text-center text-sm"><Link href="/privacy" className="inline-flex min-h-11 items-center px-3 underline">{t("nav.privacy")}</Link></p>
       </div>
     </Sky>
   );

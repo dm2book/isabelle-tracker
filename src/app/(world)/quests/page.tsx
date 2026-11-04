@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useToday } from "@/lib/client/clock";
 import { Check, Plus, Trash2 } from "lucide-react";
 import { motion } from "motion/react";
 import { useWorld } from "@/store/world";
@@ -8,7 +9,6 @@ import { useT } from "@/lib/i18n/use";
 import { PageHeader, Section, ProgressBar } from "@/components/ui/bits";
 import { ACHIEVEMENTS, activeQuests, levelProgress, type QuestDef } from "@/lib/game/rules";
 import { questName } from "@/lib/game/notify";
-import { dateKey } from "@/lib/time";
 import { uuid } from "@/lib/rooms/layout";
 import { play } from "@/lib/sound";
 
@@ -47,11 +47,9 @@ export default function QuestsPage() {
   const tz = useWorld((s) => s.prefs.timezone);
   const updatePrefs = useWorld((s) => s.updatePrefs);
   const gameAction = useWorld((s) => s.gameAction);
-  const [today, setToday] = useState("");
+  const today = useToday(tz);
   const [taskTitle, setTaskTitle] = useState("");
   const [taskEmoji, setTaskEmoji] = useState("🌟");
-
-  useEffect(() => setToday(dateKey(new Date(), tz)), [tz]);
   if (!today) return null;
 
   const lp = levelProgress(game.xp);
@@ -131,8 +129,9 @@ export default function QuestsPage() {
           {ACHIEVEMENTS.map((a) => {
             const got = !!game.achievements[a.id];
             return (
-              <div key={a.id} className={`card-flat p-3 text-center ${got ? "" : "opacity-55 grayscale"}`}>
-                <span className="text-3xl" aria-hidden>{got ? a.emoji : "🔒"}</span>
+              // A locked achievement stays readable (it tells her what to aim for); only the icon is dimmed.
+              <div key={a.id} className="card-flat p-3 text-center">
+                <span className={`text-3xl ${got ? "" : "opacity-60 grayscale"}`} aria-hidden>{got ? a.emoji : "🔒"}</span>
                 <p className="title text-sm">{td(`quests.ach.${a.id}`)}</p>
                 <p className="text-xs text-muted">{td(`quests.achDesc.${a.id}`)}</p>
               </div>

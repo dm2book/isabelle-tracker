@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFD6E7">
+<title>Hors ligne · Monde d’Isabelle</title>
+<script>
+/* Same theme as the app: colors and language cached by the app (no personal data). */
+(function () {
+  try {
+    var c = JSON.parse(localStorage.getItem("ihkw:theme-cache") || "null");
+    if (!c) return;
+    var d = document.documentElement;
+    for (var k in c.vars) d.style.setProperty(k, c.vars[k]);
+    for (var a in c.attrs) d.setAttribute(a, c.attrs[a]);
+    if (c.lang) d.lang = c.lang;
+  } catch (e) {}
+})();
+</script>
+<style>
+  :root {
+    --bg: var(--c-bg, #FFF0F6);
+    --bg2: var(--c-bg2, #FFE0EE);
+    --card: var(--c-surface, #FFFFFF);
+    --ink: var(--c-text, #4A2340);
+    --muted: var(--c-muted, #8A5A7A);
+    --pink: var(--c-primary, #FF7EB3);
+    --on-pink: var(--c-on-primary, #4A1030);
+    --line: var(--c-border, #F6C6DA);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([style*="--c-bg"]) { --bg: #2A1730; --bg2: #3A1F42; --card: #3B2242; --ink: #FFE9F3; --muted: #E2B8CF; --line: #6B3E66; --on-pink: #3A0E26; }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 20% 15%, rgba(255,255,255,.55) 0 2px, transparent 3px) 0 0 / 46px 46px,
+      linear-gradient(180deg, var(--bg2), var(--bg));
+    display: flex; align-items: center; justify-content: center;
+    padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+    -webkit-font-smoothing: antialiased;
+  }
+  .card {
+    width: 100%; max-width: 380px; text-align: center;
+    background: var(--card); border: 3px dashed var(--line); border-radius: 32px;
+    padding: 28px 22px 24px; box-shadow: 0 12px 40px rgba(180, 60, 120, .18);
+  }
+  .cloud { width: 150px; height: 120px; margin: -6px auto 4px; display: block; animation: float 3.2s ease-in-out infinite; }
+  h1 { font-size: 1.6rem; margin: 6px 0 8px; letter-spacing: .2px; }
+  p { margin: 0 0 10px; line-height: 1.45; }
+  .muted { color: var(--muted); font-size: .95rem; }
+  .status { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: .95rem; margin: 8px 0 16px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--pink); animation: hop 1s ease-in-out infinite; }
+  .dot:nth-child(2) { animation-delay: .15s; } .dot:nth-child(3) { animation-delay: .3s; }
+  button {
+    font: inherit; font-weight: 800; font-size: 1rem; cursor: pointer;
+    width: 100%; min-height: 48px; border: 0; border-radius: 999px;
+    background: var(--pink); color: var(--on-pink);
+    box-shadow: 0 4px 0 rgba(0,0,0,.12);
+  }
+  button:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0,0,0,.12); }
+  button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .zz { animation: zz 2.4s ease-in-out infinite; transform-origin: center; }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  @keyframes hop { 0%, 100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(-6px); opacity: 1; } }
+  @keyframes zz { 0%, 100% { opacity: .3; transform: translateY(2px); } 50% { opacity: 1; transform: translateY(-3px); } }
+  @media (prefers-reduced-motion: reduce) { .cloud, .dot, .zz { animation: none; } }
+  html[data-anim="off"] .cloud, html[data-anim="off"] .dot, html[data-anim="off"] .zz { animation: none; }
+</style>
+</head>
+<body>
+  <main class="card" role="main">
+    <svg class="cloud" viewBox="0 0 150 120" aria-hidden="true">
+      <g fill="#FFFFFF" stroke="var(--line)" stroke-width="3">
+        <path d="M38 96c-17 0-28-11-28-25s11-24 25-24c3-17 17-29 35-29 17 0 31 11 35 27 15 1 27 12 27 27s-12 24-28 24z"/>
+      </g>
+      <path d="M55 66q6 6 12 0M85 66q6 6 12 0" fill="none" stroke="#4A2340" stroke-width="3.5" stroke-linecap="round"/>
+      <ellipse cx="50" cy="77" rx="7" ry="4.5" fill="#FFB3CF"/>
+      <ellipse cx="103" cy="77" rx="7" ry="4.5" fill="#FFB3CF"/>
+      <path d="M72 79q4 4 8 0" fill="none" stroke="#4A2340" stroke-width="3" stroke-linecap="round"/>
+      <g transform="translate(96 22) rotate(18)">
+        <path d="M0 0l-16-9v18zM0 0l16-9v18z" fill="var(--pink)" stroke="#4A2340" stroke-width="2" stroke-linejoin="round"/>
+        <circle r="4.5" fill="var(--pink)" stroke="#4A2340" stroke-width="2"/>
+      </g>
+      <g class="zz" fill="var(--pink)" font-family="inherit" font-weight="800">
+        <text x="124" y="34" font-size="16">z</text>
+        <text x="134" y="22" font-size="12">z</text>
+      </g>
+    </svg>
+    <h1 id="title">Oups, pas d’internet</h1>
+    <p id="body">Ton monde t’attend bien au chaud. Dès que la connexion revient, il se rouvre tout seul.</p>
+    <p class="status" aria-live="polite"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span id="status">Je réessaie…</span></p>
+    <button id="retry" type="button">Réessayer</button>
+    <p class="muted" id="hint" style="margin-top:14px">Vérifie le Wi-Fi ou les données mobiles.</p>
+  </main>
+<script>
+(function () {
+  var T = {
+    fr: { title: "Oups, pas d’internet", body: "Ton monde t’attend bien au chaud. Dès que la connexion revient, il se rouvre tout seul.", status: "Je réessaie…", back: "De retour ! J’ouvre ton monde…", retry: "Réessayer", hint: "Vérifie le Wi-Fi ou les données mobiles.", doc: "Hors ligne · Monde d’Isabelle" },
+    en: { title: "Oops, no internet", body: "Your world is waiting, safe and cozy. As soon as the connection is back, it opens again by itself.", status: "Trying again…", back: "Back online! Opening your world…", retry: "Try again", hint: "Check your Wi-Fi or mobile data.", doc: "Offline · Isabelle’s World" }
+  };
+  var lang = (document.documentElement.lang || navigator.language || "fr").slice(0, 2) === "en" ? "en" : "fr";
+  var t = T[lang];
+  document.documentElement.lang = lang;
+  document.title = t.doc;
+  ["title", "body", "status", "retry", "hint"].forEach(function (id) { document.getElementById(id).textContent = t[id]; });
+
+  var busy = false;
+  var done = false;
+  function check() {
+    if (busy || done) return;
+    busy = true;
+    // A tiny public endpoint that is never cached: if it answers, the network is back.
+    fetch("/api/config", { cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok && r.status >= 500) throw new Error("down");
+        done = true;
+        document.getElementById("status").textContent = t.back;
+        setTimeout(function () { location.reload(); }, 350);
+      })
+      .catch(function () {})
+      .then(function () { busy = false; });
+  }
+  window.addEventListener("online", check);
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") check(); });
+  document.getElementById("retry").addEventListener("click", check);
+  setInterval(check, 4000);
+})();
+</script>
+</body>
+</html>

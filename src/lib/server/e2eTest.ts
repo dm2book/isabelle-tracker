@@ -7,6 +7,7 @@ import { HttpError } from "./http";
 import { acceptInvitation, createInvitation, findInvitation, SELFTEST_DOMAIN } from "./invitations";
 import { importBatch, importBegin, importFinish } from "./importer";
 import { deliverGift, revealGiftFor } from "./gifts";
+import { acceptReset, createResetLink, findReset, revokeReset } from "./passwordResets";
 import { roomToRow } from "./mappers";
 import { buildRoom } from "../rooms/templates";
 import { COINS_PER_DAY, START_COINS, daysSinceLaunch } from "../game/importCaps";
@@ -18,8 +19,8 @@ export type StepResult = { id: string; ok: boolean; detail?: string };
 /**
  * Full end-to-end test against the real Supabase project, run on the server by an admin.
  * It creates two temporary accounts on a reserved test domain (`@selftest.invalid`, which can never
- * receive mail), exercises invitations, sign-in, admin rights, Row Level Security, the import and a gift
- * with a fake code, then deletes everything it created — also when a step fails.
+ * receive mail), exercises invitations, sign-in, admin rights, password-reset links, Row Level Security,
+ * the import and a gift with a fake code, then deletes everything it created — also when a step fails.
  * Results are pass/fail only: no key, password or code is ever returned.
  */
 export async function runEndToEnd(admin: Session): Promise<StepResult[]> {
@@ -29,7 +30,7 @@ export async function runEndToEnd(admin: Session): Promise<StepResult[]> {
   const email1 = `t1-${tag}${SELFTEST_DOMAIN}`;
   const email2 = `t2-${tag}${SELFTEST_DOMAIN}`;
   // Long random passwords that also satisfy the strictest Supabase password rules (upper, lower, digit, symbol).
-  const pw1 = `${randomBytes(18).toString("base64url")}Aa1!`;
+  let pw1 = `${randomBytes(18).toString("base64url")}Aa1!`;
   const pw2 = `${randomBytes(18).toString("base64url")}Aa1!`;
   const created: string[] = [];
   const codeIds: string[] = [];
@@ -93,6 +94,38 @@ export async function runEndToEnd(admin: Session): Promise<StepResult[]> {
       await t1!.db.auth.updateUser({ data: { role: "admin" } });
       const { data } = await t1!.db.auth.getUser();
       if (data.user && hasAdminRole(data.user)) throw new Error("a user could grant herself admin");
+    }, [t1]);
+
+    // --- Password-reset links (Espace Ewan) ------------------------------------------------------
+    await step("e2e_resetAdminBlocked", () => expectCode(() => createResetLink(admin.user.id, admin.user.id), "admin_account"));
+    let resetToken = "";
+    await step("e2e_resetCreated", async () => {
+      resetToken = (await createResetLink(t1!.user.id, admin.user.id)).token;
+      const r = await findReset(resetToken);
+      if (r?.email !== email1) throw new Error("the link does not point to her account");
+    }, [t1]);
+    await step("e2e_resetUsed", async () => {
+      const newPw = `${randomBytes(18).toString("base64url")}Bb2!`;
+      await acceptReset(resetToken, newPw);
+      const old = createClient(env.supabaseUrl, env.supabaseAnonKey, { auth: { persistSession: false, autoRefreshToken: false } });
+      const { error } = await old.auth.signInWithPassword({ email: email1, password: pw1 });
+      if (!error) throw new Error("the old password still works");
+      pw1 = newPw;
+      t1 = await signIn(email1, pw1);
+    }, [resetToken]);
+    await step("e2e_resetSingleUse", () => expectCode(() => acceptReset(resetToken, `${randomBytes(18).toString("base64url")}Cc3!`), "invalid_reset"), [resetToken]);
+    await step("e2e_resetExpiredRevoked", async () => {
+      const expired = await createResetLink(t1!.user.id, admin.user.id);
+      await svc.from("password_resets").update({ expires_at: new Date(Date.now() - 60_000).toISOString() }).eq("id", expired.id);
+      if (await findReset(expired.token)) throw new Error("an expired link still works");
+      const revoked = await createResetLink(t1!.user.id, admin.user.id);
+      await revokeReset(revoked.id);
+      if (await findReset(revoked.token)) throw new Error("a cancelled link still works");
+      const older = await createResetLink(t1!.user.id, admin.user.id);
+      const newer = await createResetLink(t1!.user.id, admin.user.id);
+      if (await findReset(older.token)) throw new Error("a newer link did not cancel the older one");
+      if (!(await findReset(newer.token))) throw new Error("the newest link does not work");
+      await revokeReset(newer.id);
     }, [t1]);
 
     // --- Row Level Security ----------------------------------------------------------------------

@@ -6,6 +6,7 @@ import { useWorld } from "@/store/world";
 import { useUi } from "@/store/ui";
 import { ThemeRuntime } from "./ThemeRuntime";
 import { Toasts } from "@/components/ui/Toasts";
+import { ConnectionStatus } from "./ConnectionStatus";
 import { HugOverlay } from "@/components/overlays/HugOverlay";
 import { LevelUpOverlay, GoldenOverlay } from "@/components/overlays/Celebrations";
 import { GiftExperience } from "@/components/overlays/GiftExperience";
@@ -36,6 +37,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <ThemeRuntime />
       {children}
       <Toasts />
+      <ConnectionStatus />
       <HugOverlay />
       <LevelUpOverlay />
       <GoldenOverlay />

@@ -96,8 +96,14 @@ export default function SetupPage() {
     }
   }, []);
   useEffect(() => {
-    load();
-  }, [load]);
+    let alive = true;
+    apiGet<Status>("/api/setup/status")
+      .then((d) => alive && setData(d))
+      .catch(() => alive && setData(null));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const runTests = async (mode: "quick" | "full" = "quick") => {
     setBusy(true);

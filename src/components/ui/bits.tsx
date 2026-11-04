@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { motion } from "motion/react";
 import { normalizeHex } from "@/lib/theme/color";
 import { useT } from "@/lib/i18n/use";
 
 export function PageHeader({ title, subtitle, emoji, action }: { title: string; subtitle?: string; emoji?: string; action?: ReactNode }) {
   return (
-    <header className="relative z-[1] mb-5 flex items-end gap-3">
-      <div className="min-w-0 flex-1">
+    // On a narrow phone the title wraps instead of being cut off, and a wide action button moves to
+    // its own line rather than squeezing the title.
+    <header className="relative z-[1] mb-5 flex flex-wrap items-end gap-x-3 gap-y-2">
+      <div className="min-w-[11rem] flex-1">
         <h1 className="logo-type flex items-center gap-2 text-[1.9rem] leading-tight sm:text-4xl">
-          {emoji && <span aria-hidden className="text-[0.85em] [-webkit-text-stroke:0]">{emoji}</span>}
-          <span className="truncate">{title}</span>
+          {emoji && <span aria-hidden className="shrink-0 text-[0.85em] [-webkit-text-stroke:0]">{emoji}</span>}
+          <span className="min-w-0 break-words">{title}</span>
         </h1>
         {subtitle && <p className="mt-1 text-[0.98rem] text-muted">{subtitle}</p>}
       </div>
@@ -62,10 +64,13 @@ export function ColorField({ value, onChange, label, swatches }: { value: string
   const { t } = useT();
   const [text, setText] = useState(value);
   const [bad, setBad] = useState(false);
-  useEffect(() => {
+  // Follow the value when it changes from outside (a swatch, a preset, undo).
+  const [synced, setSynced] = useState(value);
+  if (synced !== value) {
+    setSynced(value);
     setText(value);
     setBad(false);
-  }, [value]);
+  }
   return (
     <div>
       <span className="label">{label}</span>

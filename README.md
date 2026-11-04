@@ -25,7 +25,7 @@ The app switches to cloud mode automatically when the Supabase variables **and**
 Full phone-friendly walkthrough: see the steps Claude gave in the chat, summarised here.
 
 1. **Supabase project** in an **EU region** (West EU – Paris, or Central EU – Frankfurt).
-2. **SQL Editor** → run `supabase/migrations/0001_init.sql`, then `0002_explicit_grants.sql`, then `0003_invitations_imports.sql` (each is safe to re-run).
+2. **SQL Editor** → run `supabase/migrations/0001_init.sql`, then `0002_explicit_grants.sql`, then `0003_invitations_imports.sql`, then `0004_password_resets.sql` (each is safe to re-run).
 3. **Authentication → Sign In / Providers** → turn **off** "Allow new users to sign up".
 4. **Authentication → URL Configuration** → Site URL = your production URL; add `<site>/auth/callback` to Redirect URLs.
 5. **Authentication → Users → Add user** → create **Ewan's** account (email + password, auto-confirm). Admin accounts are never created from the app.
@@ -40,7 +40,7 @@ Security model for accounts: no public sign-up; Isabelle joins only through a ha
 
 **Importing her device world.** After signing in on the device she has been using, Isabelle sees "On a trouvé ton monde sur cet appareil". The import is validated on the server, capped at what is realistically earnable since launch, merged without duplicates (safe to retry), and never deletes the copy on her device. Coins are carried over only by the first import. A backup file (Settings → Export) can also be imported.
 
-**Email.** Supabase's built-in email only reaches members of your Supabase organisation, so password-reset emails won't reach Isabelle unless you configure custom SMTP. Otherwise reset her password from Authentication → Users.
+**Forgotten password.** The app sends no e-mail (Supabase's built-in mail only reaches members of your Supabase organisation). Instead, **/admin → Password** creates a single-use reset link (24 hours, a newer link cancels older ones) that Ewan sends to Isabelle by message; after the reset her other sessions are signed out. Admin accounts can't be reset this way: Ewan resets his own password from Supabase → Authentication → Users.
 
 **Hourly reminders.** Vercel Hobby allows one cron per day (`vercel.json`, 08:00 UTC). For morning/afternoon/evening reminders, add repository secrets `APP_URL` and `CRON_SECRET` to enable `.github/workflows/reminders.yml`, or switch to Vercel Pro and make the cron hourly.
 

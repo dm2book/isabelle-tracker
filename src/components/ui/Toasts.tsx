@@ -9,6 +9,7 @@ import { COLLECTIBLE_MAP } from "@/lib/catalog/collectibles";
 import { questName } from "@/lib/game/notify";
 import { play } from "@/lib/sound";
 import type { Effect, Lang } from "@/lib/types";
+import { REWARD_KEY, type Toast } from "@/lib/toasts";
 
 const ERROR_KEYS: Record<string, string> = {
   not_enough_coins: "inventory.notEnough",
@@ -20,6 +21,14 @@ const ERROR_KEYS: Record<string, string> = {
   invalid: "errors.invalid",
   not_found: "errors.notFound",
 };
+
+function rewardText(lang: Lang, t: Toast) {
+  const xp = t.xp ?? 0;
+  const coins = t.coins ?? 0;
+  if (xp && coins) return translate(lang, "notifications.earnedBoth", { xp, coins });
+  if (xp) return translate(lang, "notifications.earnedXp", { n: xp });
+  return translate(lang, "notifications.earnedCoins", { n: coins });
+}
 
 function textOf(lang: Lang, text: string, tone?: string) {
   if (tone === "error" && ERROR_KEYS[text]) return translate(lang, ERROR_KEYS[text]);
@@ -68,8 +77,9 @@ function useEffectsProcessor() {
       }
     }
     if (coins || xp) {
-      const parts = [coins ? translate(lang, "hearts.coins", { n: coins }) : "", xp ? translate(lang, "hearts.xp", { n: xp }) : ""].filter(Boolean);
-      st.toast({ text: parts.join(" · "), emoji: coins ? "🪙" : "✨", tone: "reward" });
+      // One reward toast: amounts earned in quick succession are added up (display only —
+      // the game state already holds the real XP and coins).
+      st.reward({ xp, coins });
       play("coin");
     }
   }, [pending, tl]);
@@ -95,8 +105,20 @@ export function Toasts() {
               t.tone === "error" ? "bg-[#FFE1E6] text-[#7A1230]" : t.tone === "reward" ? "bg-primary text-on-primary" : "bg-surface text-ink"
             }`}
           >
-            {t.emoji && <span aria-hidden className="text-lg">{t.emoji}</span>}
-            <span className="text-sm">{textOf(lang, t.text, t.tone)}</span>
+            {t.key === REWARD_KEY ? (
+              <>
+                <span aria-hidden className="text-lg">{t.xp ? "✨" : "🪙"}</span>
+                {/* Re-keyed on every update so the total "pops" when more points arrive */}
+                <motion.span key={t.bump} className="text-sm" initial={{ scale: t.bump ? 1.12 : 1 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 18 }}>
+                  {rewardText(lang, t)}
+                </motion.span>
+              </>
+            ) : (
+              <>
+                {t.emoji && <span aria-hidden className="text-lg">{t.emoji}</span>}
+                <span className="text-sm">{textOf(lang, t.text, t.tone)}</span>
+              </>
+            )}
           </motion.button>
         ))}
       </AnimatePresence>
