@@ -62,8 +62,10 @@ export async function GET() {
     const missing: string[] = [];
     await Promise.all(
       TABLES.map(async (t) => {
-        const { error } = await db.from(t).select("*", { head: true, count: "exact" }).limit(1);
-        if (error) missing.push(t);
+        // A real (empty) read, not a HEAD request: supabase-js reports a missing table as "OK"
+        // when a HEAD request gets an empty 404.
+        const { error, status } = await db.from(t).select("*").limit(0);
+        if (error || status === 404 || status === 204) missing.push(t);
       }),
     );
     // Name the migration file to run for whatever is missing.
