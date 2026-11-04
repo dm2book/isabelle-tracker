@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Le Monde Hello Kitty d’Isabelle",
-    short_name: "Monde d’Isabelle",
+    name: "Le Petit Monde d’Isabelle",
+    short_name: "Petit Monde",
     description: "Le petit univers tout doux d’Isabelle 🎀",
     start_url: "/home",
     display: "standalone",

@@ -2,7 +2,7 @@
  * Service worker: web push notifications, plus a friendly offline page.
  * Only the static offline page is cached; no page, API answer or personal data is ever cached.
  */
-const OFFLINE_CACHE = "ihkw-offline-v1";
+const OFFLINE_CACHE = "ihkw-offline-v2";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {
@@ -35,7 +35,7 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let data = { title: "Monde d’Isabelle", body: "", url: "/home", tag: undefined };
+  let data = { title: "Le Petit Monde d’Isabelle", body: "", url: "/home", tag: undefined };
   try {
     data = { ...data, ...event.data.json() };
   } catch (e) {

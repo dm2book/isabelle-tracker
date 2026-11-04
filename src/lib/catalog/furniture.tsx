@@ -673,8 +673,8 @@ export const ITEMS: ItemDef[] = [
     ),
   },
   {
-    id: "plush_cat", cat: "plushies", name: { fr: "Mini chaton", en: "Mini kitty plush" }, w: 80, h: 80, place: "any", price: 0,
-    c1: "#FFFFFF", c2: "#FF7EB6", tags: "peluche plush chat cat chaton kitty",
+    id: "plush_cat", cat: "plushies", name: { fr: "Mini chaton", en: "Mini kitten plush" }, w: 80, h: 80, place: "any", price: 0,
+    c1: "#FFFFFF", c2: "#FF7EB6", tags: "peluche plush chat cat chaton kitten",
     art: ({ c1, c2, ink }) => (
       <g {...S(ink)}>
         <path d="M12 30 L16 4 L34 20Z" fill={c1} /><path d="M68 30 L64 4 L46 20Z" fill={c1} />

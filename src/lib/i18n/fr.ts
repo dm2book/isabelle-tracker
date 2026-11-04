@@ -1,8 +1,8 @@
 // Français — langue par défaut.
 export const fr = {
   app: {
-    name: "Le Monde Hello Kitty d’Isabelle",
-    short: "Monde d’Isabelle",
+    name: "Le Petit Monde d’Isabelle",
+    short: "Petit Monde",
     tagline: "Ton petit univers tout doux",
   },
   common: {
@@ -42,7 +42,7 @@ export const fr = {
     step2: "Comment s’appelle ton monde ?",
     step2Hint: "Choisis une idée ou invente le tien.",
     worldName: "Nom de ton monde",
-    suggestions: ["Le Petit Monde d’Isabelle", "Maison des Cœurs", "Kitty Dream World", "Mon Monde Magique", "Château Guimauve", "Île aux Bisous"],
+    suggestions: ["Le Petit Monde d’Isabelle", "Maison des Cœurs", "Monde des Rêves", "Mon Monde Magique", "Château Guimauve", "Île aux Bisous"],
     step3: "Voici ton compagnon !",
     step3Hint: "Donne-lui un nom et choisis la couleur de son nœud.",
     companionName: "Nom du compagnon",
@@ -153,7 +153,7 @@ export const fr = {
     type: "Type de pièce",
     size: "Taille",
     sizes: { cozy: "Petite & cosy", standard: "Normale", grand: "Grande" },
-    kinds: { bedroom: "Chambre de rêve", cafe: "Café Kitty", reading: "Coin lecture", gaming: "Salle de jeux rose", garden: "Jardin magique", starry: "Chambre étoilée secrète", living: "Salon", island: "Île magique", custom: "Pièce perso" },
+    kinds: { bedroom: "Chambre de rêve", cafe: "Café Mimi", reading: "Coin lecture", gaming: "Salle de jeux rose", garden: "Jardin magique", starry: "Chambre étoilée secrète", living: "Salon", island: "Île magique", custom: "Pièce perso" },
     empty: "Aucune pièce pour l’instant. Crée la première !",
     edit: "Décorer",
     view: "Visiter",

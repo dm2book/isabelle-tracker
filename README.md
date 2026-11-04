@@ -1,11 +1,11 @@
-# Isabelle’s Hello Kitty World 🎀
+# Le Petit Monde d’Isabelle 🎀
 
 A private, cozy little universe made for Isabelle: decorate rooms, dress up a companion, create her own themes, keep a gentle diary, complete tiny quests, catch floating hearts, and open surprises and gifts from Ewan.
 
 Built with **Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 · Motion · Zustand · Supabase (Auth + Postgres + RLS) · Web Push**.
 French is the default language; English is available in Settings.
 
-> **About the name and artwork.** The companion is an **original** white kitten drawn in code — no Sanrio artwork is used. If you obtain a license for official Hello Kitty assets, register them in `src/lib/companion/skins.ts` (see the comments there). Keep the app private; the name is a personal nickname, not a commercial product.
+> **About the name and artwork.** *Le Petit Monde d’Isabelle* (English: *Isabelle’s Little World*; “Petit Monde” under the iPhone icon). The companion, Mimi, is an **original** character drawn in code; no third-party characters or artwork are used, and none may be added without a license on record (`src/lib/companion/skins.ts`). The app is private and made for Isabelle only.
 
 ## Two modes
 

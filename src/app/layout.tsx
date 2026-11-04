@@ -5,11 +5,11 @@ import { NO_FLASH_SCRIPT } from "@/lib/theme/apply";
 import { Providers } from "@/components/shell/Providers";
 
 export const metadata: Metadata = {
-  title: "Le Monde Hello Kitty d’Isabelle",
+  title: "Le Petit Monde d’Isabelle",
   description: "Le petit univers tout doux d’Isabelle 🎀",
-  applicationName: "Monde d’Isabelle",
+  applicationName: "Petit Monde",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "Monde d’Isabelle", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Petit Monde", statusBarStyle: "default" },
   robots: { index: false, follow: false },
   icons: { icon: "/icon.svg", apple: "/apple-icon.png" },
 };

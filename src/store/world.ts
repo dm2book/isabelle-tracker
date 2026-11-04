@@ -503,7 +503,7 @@ export const useWorld = create<WorldState>()((set, get) => {
         const now = new Date().toISOString();
         set((s) => ({ gifts: s.gifts.map((x) => (x.id === id ? { ...x, status: "revealed", revealedAt: x.revealedAt ?? now } : x)) }));
         persistLocal();
-        return { code: "DEMO-KITTY-2026", demo: true, already: !!g?.revealedAt };
+        return { code: "DEMO-MIMI-2026", demo: true, already: !!g?.revealedAt };
       }
       // The real code only ever lives in component memory — never in this store or in storage.
       const r = await apiPost<{ code: string; already: boolean }>("/api/gifts/reveal", { id });

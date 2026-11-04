@@ -2,8 +2,8 @@ import type { Dictionary } from "./index";
 
 export const en: Dictionary = {
   app: {
-    name: "Isabelle’s Hello Kitty World",
-    short: "Isabelle’s World",
+    name: "Isabelle’s Little World",
+    short: "Little World",
     tagline: "Your soft little universe",
   },
   common: {
@@ -43,7 +43,7 @@ export const en: Dictionary = {
     step2: "What’s your world called?",
     step2Hint: "Pick an idea or invent your own.",
     worldName: "World name",
-    suggestions: ["Le Petit Monde d’Isabelle", "Maison des Cœurs", "Kitty Dream World", "Mon Monde Magique", "Marshmallow Castle", "Kiss Island"],
+    suggestions: ["Le Petit Monde d’Isabelle", "Maison des Cœurs", "Dream World", "Mon Monde Magique", "Marshmallow Castle", "Kiss Island"],
     step3: "Meet your companion!",
     step3Hint: "Give them a name and pick a bow color.",
     companionName: "Companion name",
@@ -154,7 +154,7 @@ export const en: Dictionary = {
     type: "Room type",
     size: "Size",
     sizes: { cozy: "Small & cozy", standard: "Regular", grand: "Large" },
-    kinds: { bedroom: "Dream bedroom", cafe: "Kitty café", reading: "Reading corner", gaming: "Pink gaming room", garden: "Magic garden", starry: "Secret starry room", living: "Living room", island: "Magic island", custom: "Custom room" },
+    kinds: { bedroom: "Dream bedroom", cafe: "Mimi’s café", reading: "Reading corner", gaming: "Pink gaming room", garden: "Magic garden", starry: "Secret starry room", living: "Living room", island: "Magic island", custom: "Custom room" },
     empty: "No rooms yet. Create the first one!",
     edit: "Decorate",
     view: "Visit",

@@ -1,7 +1,7 @@
 "use client";
 
-/* Original companion character: a round white kitten with sparkly eyes and a bow.
-   Not Sanrio artwork. A licensed skin can replace this component later (see lib/companion/skins.ts). */
+/* Mimi, the original companion character of Le Petit Monde d’Isabelle, drawn entirely in code.
+   No third-party artwork is used (see lib/companion/skins.ts). */
 import { motion, useReducedMotion, type TargetAndTransition, type Transition } from "motion/react";
 import { useId, useMemo } from "react";
 import type { BowId, CompanionLook } from "@/lib/types";
