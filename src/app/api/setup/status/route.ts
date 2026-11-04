@@ -1,6 +1,7 @@
 import { cloudEnabled, env, pushConfigured } from "@/lib/server/env";
 import { getSession, hasAdminRole, serviceClient } from "@/lib/server/supabase";
 import { ok } from "@/lib/server/http";
+import { looksSecret, supabasePublicKeySource, supabaseUrlSource } from "@/lib/supabaseConfig";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,22 @@ const TABLES = [
 
 type Check = { id: string; ok: boolean; detail?: string };
 
+// Details name the variable that was found (or expected) — never its value.
+function urlCheck(): Check {
+  const ok = /^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?$/i.test(env.supabaseUrl);
+  if (!supabaseUrlSource.name) return { id: "supabaseUrl", ok, detail: "not found in this environment (expected NEXT_PUBLIC_SUPABASE_URL)" };
+  if (!ok) return { id: "supabaseUrl", ok, detail: `${supabaseUrlSource.name} is set but is not an https:// project address` };
+  return { id: "supabaseUrl", ok, detail: supabaseUrlSource.name === "NEXT_PUBLIC_SUPABASE_URL" ? undefined : `found as ${supabaseUrlSource.name}` };
+}
+function keyCheck(): Check {
+  const { name, value } = supabasePublicKeySource;
+  if (!name) return { id: "publicKey", ok: false, detail: "not found in this environment (expected NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)" };
+  if (looksSecret(value)) return { id: "publicKey", ok: false, detail: `${name} holds the SECRET key: use the anon / publishable key here` };
+  if (value.length <= 20) return { id: "publicKey", ok: false, detail: `${name} is set but too short` };
+  const standard = name === "NEXT_PUBLIC_SUPABASE_ANON_KEY" || name === "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY";
+  return { id: "publicKey", ok: true, detail: standard ? undefined : `found as ${name}` };
+}
+
 /**
  * Setup checklist for Ewan. Reports only whether things are configured (true/false), never a value.
  * Account details are shown only to a signed-in address listed in ADMIN_EMAILS.
@@ -19,8 +36,8 @@ type Check = { id: string; ok: boolean; detail?: string };
 export async function GET() {
   const hasDb = Boolean(env.supabaseUrl && env.supabaseAnonKey && env.serviceRoleKey);
   const envChecks: Check[] = [
-    { id: "supabaseUrl", ok: /^https:\/\/.+/.test(env.supabaseUrl) },
-    { id: "publicKey", ok: env.supabaseAnonKey.length > 20 },
+    urlCheck(),
+    keyCheck(),
     { id: "secretKey", ok: env.serviceRoleKey.length > 20 && env.serviceRoleKey !== env.supabaseAnonKey },
     { id: "appSecret", ok: env.appSecret.length >= 32 },
     { id: "rewardKey", ok: env.rewardKey.length >= 32 },
