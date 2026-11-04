@@ -202,7 +202,7 @@ function CreateTab({ editing, onDone }: { editing: Theme | null; onDone: () => v
       </Section>
       <div className="space-y-3 lg:sticky lg:top-24 lg:self-start">
         <PreviewSample />
-        <div className={`card-flat p-3 text-sm font-bold ${textOk && btnOk ? "" : "bg-[#FFF1D6]"}`}>
+        <div className={`card-flat p-3 text-sm font-bold ${textOk && btnOk ? "" : "bg-[#FFF1D6] text-[#4A2E12]"}`}>
           {textOk && btnOk ? (
             <p>✅ {t("studio.contrastOk")}</p>
           ) : (

@@ -156,7 +156,7 @@ export default function SetupPage() {
               )}
               {data.adminSql && (
                 <div className="mt-3 space-y-2 rounded-2xl bg-[#FFF1D6] p-3">
-                  <p className="text-sm font-bold">{t("setup.adminRoleMissing")}</p>
+                  <p className="text-sm font-bold text-[#4A2E12]">{t("setup.adminRoleMissing")}</p>
                   <pre className="overflow-x-auto rounded-xl bg-surface p-2 text-xs whitespace-pre-wrap break-all">{data.adminSql}</pre>
                   <button className="btn btn-soft btn-sm" onClick={async () => { await navigator.clipboard.writeText(data.adminSql!).catch(() => {}); toast({ text: t("common.copied"), tone: "success" }); }}>
                     📋 {t("setup.copySql")}

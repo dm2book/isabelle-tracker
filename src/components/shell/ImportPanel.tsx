@@ -72,7 +72,7 @@ export function ImportPanel({ onDone, showFile = true }: { onDone?: () => void; 
           {(summary.capped?.length ?? 0) > 0 && <p className="text-xs text-muted">ℹ️ {t("migrate.capped")}</p>}
         </div>
       ) : null}
-      {error && <p className="rounded-xl bg-[#FFF1D6] p-2 text-sm font-bold" role="alert">{error}</p>}
+      {error && <p className="rounded-xl bg-[#FFF1D6] p-2 text-sm font-bold text-[#4A2E12]" role="alert">{error}</p>}
       {!progress && (
         <div className="flex flex-wrap gap-2">
           {device && (
