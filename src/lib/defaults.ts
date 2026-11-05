@@ -37,9 +37,10 @@ export function defaultPrefs(lang: Lang = "fr"): Preferences {
     timezone: DEFAULT_TZ,
     companion: {
       name: "Mimi",
-      fur: "#FFFFFF",
-      bowColor: "#FF5C8A",
-      bow: "classic",
+      // New worlds start with vanilla fur and the star clip. Existing worlds keep their own choices.
+      fur: "#FFF4E6",
+      bowColor: "#FF8DC0",
+      bow: "star",
       outfit: null,
       outfitColor: null,
       accessory: null,
@@ -81,6 +82,9 @@ export function emptySnapshot(lang: Lang = "fr"): WorldSnapshot {
   };
 }
 
+/** Mimi's look in worlds created before Mimi 2.0 (used only to fill fields an old save is missing). */
+export const LEGACY_COMPANION = { fur: "#FFFFFF", bowColor: "#FF5C8A", bow: "classic" } as const;
+
 /** Merge a possibly-partial preferences object over defaults (for forward compatibility). */
 export function mergePrefs(p: Partial<Preferences> | null | undefined): Preferences {
   const d = defaultPrefs(p?.lang ?? "fr");
@@ -96,7 +100,9 @@ export function mergePrefs(p: Partial<Preferences> | null | undefined): Preferen
       reminders: { ...d.notifications.reminders, ...(p.notifications?.reminders ?? {}) },
       quietHours: { ...d.notifications.quietHours, ...(p.notifications?.quietHours ?? {}) },
     },
-    companion: { ...d.companion, ...(p.companion ?? {}) },
+    // An existing companion keeps its own look. A field missing from an older saved world falls back
+    // to the original look (white, classic bow), never to the new-world defaults.
+    companion: p.companion ? { ...d.companion, ...LEGACY_COMPANION, ...p.companion } : d.companion,
     wellness: { ...d.wellness, ...(p.wellness ?? {}) },
     privacy: { ...d.privacy, ...(p.privacy ?? {}) },
     customThemes: p.customThemes ?? [],

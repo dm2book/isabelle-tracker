@@ -52,7 +52,9 @@ function TopBar() {
   const setOverlay = useWorld((s) => s.setOverlay);
   const setMore = useUi((s) => s.setMoreOpen);
   return (
-    <div className="sticky top-0 z-40 px-3 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 lg:px-8">
+    // The whole sticky area (notch, bar and the coins row below it) has a frosted background, so page
+    // content scrolls underneath instead of showing through behind the coins and stars.
+    <div className="topbar-glass sticky top-0 z-40 px-3 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 lg:px-8" data-topbar>
       <div className="card flex items-center gap-2 px-3 py-2 lg:px-4">
         <button className="btn btn-ghost btn-icon btn-sm relative z-[1] lg:hidden" onClick={() => setMore(true)} aria-label={t("nav.more")}>
           <Menu size={20} />

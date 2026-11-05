@@ -1,7 +1,8 @@
 "use client";
 
-/* Mimi, the original companion character of Le Petit Monde d’Isabelle, drawn entirely in code.
-   No third-party artwork is used (see lib/companion/skins.ts). */
+/* Mimi, the original companion character of Le Petit Monde d’Isabelle, drawn entirely in code:
+   a round "mochi" head with soft round ears, a curl with a star clip, big glossy eyes, a heart nose,
+   a smiling mouth and a heart-tipped tail. No third-party artwork is used (see lib/companion/skins.ts). */
 import { motion, useReducedMotion, type TargetAndTransition, type Transition } from "motion/react";
 import { useId, useMemo } from "react";
 import type { BowId, CompanionLook } from "@/lib/types";
@@ -41,6 +42,8 @@ const ANIMS: Record<CompanionAnim, AnimSpec> = {
   poke: { body: { scaleY: [1, 0.84, 1.1, 0.97, 1], scaleX: [1, 1.12, 0.94, 1.02, 1] }, t: { duration: 0.6 } },
 };
 
+/** Hair accessory worn on Mimi's curl at the top centre of her head: ribbons are tied at the base of
+ *  the curl, small clips (star, heart, flower) sit right beside it. Never on an ear. */
 function Bow({ kind, color }: { kind: BowId; color: string }) {
   const ink = darken(color, 0.35);
   const s = { stroke: ink, strokeWidth: 3, strokeLinejoin: "round" as const };
@@ -49,7 +52,7 @@ function Bow({ kind, color }: { kind: BowId; color: string }) {
       return null;
     case "big":
       return (
-        <g transform="translate(46 30) rotate(-18)" {...s}>
+        <g transform="translate(100 29) scale(0.62)" {...s}>
           <path d="M0 0 C-30 -32 -52 -6 -40 14 C-30 30 -10 18 0 6Z" fill={color} />
           <path d="M0 0 C30 -32 52 -6 40 14 C30 30 10 18 0 6Z" fill={color} />
           <ellipse cx="0" cy="3" rx="10" ry="11" fill={lighten(color, 0.15)} />
@@ -58,7 +61,7 @@ function Bow({ kind, color }: { kind: BowId; color: string }) {
       );
     case "flower":
       return (
-        <g transform="translate(48 30)" {...s} strokeWidth={2.5}>
+        <g transform="translate(115 22) scale(0.72)" {...s} strokeWidth={2.5}>
           {[0, 72, 144, 216, 288].map((a) => (
             <ellipse key={a} cx="0" cy="-13" rx="9" ry="13" fill={color} transform={`rotate(${a})`} />
           ))}
@@ -67,19 +70,20 @@ function Bow({ kind, color }: { kind: BowId; color: string }) {
       );
     case "heart":
       return (
-        <g transform="translate(46 26) rotate(-14) scale(1.4)" {...s} strokeWidth={2}>
+        <g transform="translate(115 12) rotate(10) scale(1.05)" {...s} strokeWidth={2}>
           <path d="M0 4 C-5 -4 -16 -1 -12 8 C-9 13 0 18 0 20 C0 18 9 13 12 8 C16 -1 5 -4 0 4Z" fill={color} />
         </g>
       );
     case "star":
       return (
-        <g transform="translate(46 30) rotate(-12)" {...s} strokeWidth={2.5}>
-          <polygon points="0,-20 6,-6 21,-6 9,3 13,18 0,9 -13,18 -9,3 -21,-6 -6,-6" fill={color} />
+        <g transform="translate(115 23)" {...s} strokeWidth={2.6}>
+          <polygon points="0,-15 4.2,-5.4 14.3,-4.6 6.7,2.4 9,12.2 0,7 -9,12.2 -6.7,2.4 -14.3,-4.6 -4.2,-5.4" fill={color} />
+          <circle r="3" fill="#FFF4F8" stroke="none" />
         </g>
       );
     case "crown":
       return (
-        <g transform="translate(100 14)" {...s} strokeWidth={2.5}>
+        <g transform="translate(100 24) scale(0.92)" {...s} strokeWidth={2.5}>
           <path d="M-26 14 L-30 -10 L-14 2 L0 -16 L14 2 L30 -10 L26 14Z" fill={color} />
           <circle cx="0" cy="4" r="4" fill="#FFFFFF" />
           <circle cx="-16" cy="8" r="3" fill="#FFFFFF" />
@@ -88,7 +92,7 @@ function Bow({ kind, color }: { kind: BowId; color: string }) {
       );
     default:
       return (
-        <g transform="translate(46 32) rotate(-20)" {...s}>
+        <g transform="translate(100 30) scale(0.72)" {...s}>
           <path d="M0 0 C-22 -24 -40 -4 -30 12 C-22 24 -8 14 0 4Z" fill={color} />
           <path d="M0 0 C22 -24 40 -4 30 12 C22 24 8 14 0 4Z" fill={color} />
           <ellipse cx="0" cy="2" rx="8" ry="9" fill={lighten(color, 0.12)} />
@@ -98,42 +102,47 @@ function Bow({ kind, color }: { kind: BowId; color: string }) {
   }
 }
 
+const EYES = [74, 126];
+
 function Eyes({ mood, closed }: { mood: Mood; closed: boolean }) {
   if (closed || mood === "sleepy") {
     return (
       <g stroke={INK} strokeWidth={4} strokeLinecap="round" fill="none">
-        <path d="M58 92 Q70 100 82 92" />
-        <path d="M118 92 Q130 100 142 92" />
+        <path d="M62 96 Q74 104 86 96" />
+        <path d="M114 96 Q126 104 138 96" />
       </g>
     );
   }
   if (mood === "celebrating" || mood === "relaxed") {
     return (
       <g stroke={INK} strokeWidth={4.5} strokeLinecap="round" fill="none">
-        <path d="M58 96 Q70 82 82 96" />
-        <path d="M118 96 Q130 82 142 96" />
+        <path d="M62 99 Q74 84 86 99" />
+        <path d="M114 99 Q126 84 138 99" />
       </g>
     );
   }
   if (mood === "loving") {
     return (
       <g fill="#FF5C8A" stroke={INK} strokeWidth={2}>
-        <path transform="translate(70 84) scale(0.9)" d="M0 6 C-6 -2 -16 2 -12 10 C-9 15 0 19 0 22 C0 19 9 15 12 10 C16 2 6 -2 0 6Z" />
-        <path transform="translate(130 84) scale(0.9)" d="M0 6 C-6 -2 -16 2 -12 10 C-9 15 0 19 0 22 C0 19 9 15 12 10 C16 2 6 -2 0 6Z" />
+        {EYES.map((cx) => (
+          <path key={cx} transform={`translate(${cx} 86) scale(1.05)`} d="M0 6 C-6 -2 -16 2 -12 10 C-9 15 0 19 0 22 C0 19 9 15 12 10 C16 2 6 -2 0 6Z" />
+        ))}
       </g>
     );
   }
-  const r = mood === "excited" ? 12 : 10.5;
+  const big = mood === "excited";
+  const rx = big ? 14 : 13;
+  const ry = big ? 17 : 16;
   return (
     <g>
-      {[70, 130].map((cx) => (
+      {EYES.map((cx) => (
         <g key={cx}>
-          <ellipse cx={cx} cy={92} rx={r} ry={r * 1.12} fill={INK} />
-          <circle cx={cx + 3.5} cy={87} r={r * 0.36} fill="#FFFFFF" />
-          <circle cx={cx - 3.5} cy={97} r={r * 0.17} fill="#FFFFFF" />
-          {mood === "excited" && (
-            <path d={`M${cx - 4} ${92} l2 -5 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2z`} fill="#FFE08A" transform={`translate(${cx * 0.02} 0)`} />
-          )}
+          <ellipse cx={cx} cy={94} rx={rx} ry={ry} fill={INK} />
+          <ellipse cx={cx} cy={101} rx={rx * 0.73} ry={ry * 0.47} fill="#A774C9" opacity={0.85} />
+          <circle cx={cx + 4.5} cy={87} r={5.2} fill="#FFFFFF" />
+          <circle cx={cx - 4.5} cy={101} r={2.4} fill="#FFFFFF" />
+          <path d={`M${cx + 7} 100 l1.4 -3 l1.4 3 l3 1.2 l-3 1.2 l-1.4 3 l-1.4 -3 l-3 -1.2z`} fill="#FFE9A8" />
+          {big && <path d={`M${cx - 4} 92 l2 -5 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2z`} fill="#FFE08A" />}
         </g>
       ))}
     </g>
@@ -141,11 +150,11 @@ function Eyes({ mood, closed }: { mood: Mood; closed: boolean }) {
 }
 
 function Mouth({ mood, anim }: { mood: Mood; anim: CompanionAnim | null }) {
-  if (anim === "kiss") return <path d="M94 112 Q100 106 106 112 Q100 118 94 112Z" fill="#FF5C8A" stroke={INK} strokeWidth={2} />;
-  if (mood === "hungry" || anim === "eat") return <ellipse cx="100" cy="114" rx="5" ry="6" fill="#FF8FA8" stroke={INK} strokeWidth={2.5} />;
-  if (mood === "celebrating" || mood === "excited") return <path d="M90 110 Q100 124 110 110 Z" fill="#FF8FA8" stroke={INK} strokeWidth={2.5} strokeLinejoin="round" />;
-  if (mood === "sleepy") return <path d="M96 113 Q100 116 104 113" fill="none" stroke={INK} strokeWidth={2.5} strokeLinecap="round" />;
-  return <path d="M91 110 Q95.5 116 100 110 Q104.5 116 109 110" fill="none" stroke={INK} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />;
+  if (anim === "kiss") return <path d="M94 120 Q100 114 106 120 Q100 126 94 120Z" fill="#FF5C8A" stroke={INK} strokeWidth={2} />;
+  if (mood === "hungry" || anim === "eat") return <ellipse cx="100" cy="122" rx="5" ry="6" fill="#FF8FA8" stroke={INK} strokeWidth={2.5} />;
+  if (mood === "celebrating" || mood === "excited") return <path d="M90 118 Q100 132 110 118 Z" fill="#FF8FA8" stroke={INK} strokeWidth={2.5} strokeLinejoin="round" />;
+  if (mood === "sleepy") return <path d="M96 121 Q100 124 104 121" fill="none" stroke={INK} strokeWidth={2.5} strokeLinecap="round" />;
+  return <path d="M92 118 Q96 123 100 118 Q104 123 108 118" fill="none" stroke={INK} strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round" />;
 }
 
 function Outfit({ id, color, clip }: { id: string; color: string; clip: string }) {
@@ -271,19 +280,19 @@ function Accessory({ id, color }: { id: string; color: string }) {
     case "glasses_heart":
       return (
         <g {...s} fill="none" stroke={color} strokeWidth={4}>
-          {[70, 130].map((x) => (
-            <path key={x} transform={`translate(${x} 82) scale(1.35)`} d="M0 6 C-6 -2 -16 2 -12 10 C-9 15 0 19 0 22 C0 19 9 15 12 10 C16 2 6 -2 0 6Z" fill={lighten(color, 0.7)} fillOpacity={0.45} />
+          {EYES.map((x) => (
+            <path key={x} transform={`translate(${x} 84) scale(1.35)`} d="M0 6 C-6 -2 -16 2 -12 10 C-9 15 0 19 0 22 C0 19 9 15 12 10 C16 2 6 -2 0 6Z" fill={lighten(color, 0.7)} fillOpacity={0.45} />
           ))}
-          <path d="M86 94 Q100 88 114 94" />
+          <path d="M90 96 Q100 90 110 96" />
         </g>
       );
     case "sunglasses":
       return (
         <g {...s} stroke={INK}>
-          <rect x="50" y="80" width="40" height="26" rx="10" fill={color} />
-          <rect x="110" y="80" width="40" height="26" rx="10" fill={color} />
-          <path d="M90 90 Q100 84 110 90" fill="none" />
-          <path d="M56 86 L66 84" stroke="#FFFFFF" strokeWidth={3} />
+          <rect x="54" y="82" width="40" height="26" rx="10" fill={color} />
+          <rect x="106" y="82" width="40" height="26" rx="10" fill={color} />
+          <path d="M94 92 Q100 86 106 92" fill="none" />
+          <path d="M60 88 L70 86" stroke="#FFFFFF" strokeWidth={3} />
         </g>
       );
     case "flower_crown":
@@ -301,9 +310,9 @@ function Accessory({ id, color }: { id: string; color: string }) {
     case "headphones":
       return (
         <g {...s}>
-          <path d="M34 80 Q34 6 100 6 Q166 6 166 80" fill="none" stroke={color} strokeWidth={10} />
-          <rect x="22" y="70" width="24" height="36" rx="10" fill={color} />
-          <rect x="154" y="70" width="24" height="36" rx="10" fill={color} />
+          <path d="M30 84 Q30 8 100 8 Q170 8 170 84" fill="none" stroke={color} strokeWidth={10} />
+          <rect x="20" y="74" width="24" height="36" rx="10" fill={color} />
+          <rect x="156" y="74" width="24" height="36" rx="10" fill={color} />
         </g>
       );
     case "scarf":
@@ -347,9 +356,9 @@ function Accessory({ id, color }: { id: string; color: string }) {
     case "earmuffs":
       return (
         <g {...s}>
-          <path d="M30 70 Q40 10 100 10 Q160 10 170 70" fill="none" stroke="#FFB3D1" strokeWidth={6} />
-          <circle cx="30" cy="78" r="18" fill={color} />
-          <circle cx="170" cy="78" r="18" fill={color} />
+          <path d="M32 74 Q40 12 100 12 Q160 12 168 74" fill="none" stroke="#FFB3D1" strokeWidth={6} />
+          <circle cx="32" cy="82" r="18" fill={color} />
+          <circle cx="168" cy="82" r="18" fill={color} />
         </g>
       );
     case "bunny_ears":
@@ -406,6 +415,7 @@ export function Companion({ look, mood = "happy", anim = null, animKey = 0, size
   const clip = `body-${uid}`;
   const fur = look.fur || "#FFFFFF";
   const furInk = mix(darken(fur, 0.5), INK, 0.6);
+  const innerEar = mix(fur, "#FFB3CF", 0.55);
   const sleeping = anim === "sleep" || mood === "sleepy";
   const outfit = look.outfit ? WEARABLE_MAP[look.outfit] : null;
   const accessory = look.accessory ? WEARABLE_MAP[look.accessory] : null;
@@ -454,9 +464,10 @@ export function Companion({ look, mood = "happy", anim = null, animKey = 0, size
         transition={t}
         style={{ originX: 0.5, originY: 1 }}
       >
-        {/* tail */}
-        <path d="M140 190 Q176 186 172 156 Q170 140 182 136" fill="none" stroke={furInk} strokeWidth={14} strokeLinecap="round" />
-        <path d="M140 190 Q176 186 172 156 Q170 140 182 136" fill="none" stroke={fur} strokeWidth={9} strokeLinecap="round" />
+        {/* tail, with a little heart at its tip */}
+        <path d="M140 190 Q176 186 172 156 Q170 140 180 134" fill="none" stroke={furInk} strokeWidth={14} strokeLinecap="round" />
+        <path d="M140 190 Q176 186 172 156 Q170 140 180 134" fill="none" stroke={fur} strokeWidth={9} strokeLinecap="round" />
+        <path transform="translate(183 118) rotate(18) scale(1.15)" d="M0 6 C-6 -2 -16 2 -12 10 C-9 15 0 19 0 22 C0 19 9 15 12 10 C16 2 6 -2 0 6Z" fill={look.bowColor} stroke={furInk} strokeWidth={2.6} strokeLinejoin="round" />
         {outfit?.id === "witch" && <Outfit id="witch" color={outfitColor} clip={clip} />}
         {/* body */}
         <ellipse cx="100" cy="172" rx="46" ry="38" fill={`url(#shade-${uid})`} stroke={furInk} strokeWidth={3.5} />
@@ -475,23 +486,25 @@ export function Companion({ look, mood = "happy", anim = null, animKey = 0, size
         {accessory?.id === "scarf" && <Accessory id="scarf" color={accColor} />}
         {/* head */}
         <g>
-          <path d="M40 66 L36 14 Q38 6 46 10 L86 36Z" fill={fur} stroke={furInk} strokeWidth={3.5} strokeLinejoin="round" />
-          <path d="M160 66 L164 14 Q162 6 154 10 L114 36Z" fill={fur} stroke={furInk} strokeWidth={3.5} strokeLinejoin="round" />
-          <path d="M46 46 L44 22 L66 38Z" fill="#FFC2D9" />
-          <path d="M154 46 L156 22 L134 38Z" fill="#FFC2D9" />
-          <ellipse cx="100" cy="88" rx="74" ry="60" fill={`url(#shade-${uid})`} stroke={furInk} strokeWidth={3.5} />
+          {/* soft round ears */}
+          <path d="M46 70 C30 40 36 12 56 14 C72 16 84 34 88 46 Z" fill={fur} stroke={furInk} strokeWidth={3.5} strokeLinejoin="round" />
+          <path d="M154 70 C170 40 164 12 144 14 C128 16 116 34 112 46 Z" fill={fur} stroke={furInk} strokeWidth={3.5} strokeLinejoin="round" />
+          <path d="M52 56 C44 38 48 24 58 25 C67 26 74 36 77 44 Z" fill={innerEar} />
+          <path d="M148 56 C156 38 152 24 142 25 C133 26 126 36 123 44 Z" fill={innerEar} />
+          {/* round "mochi" head */}
+          <path d="M100 30 C142 30 166 56 166 92 C166 128 138 150 100 150 C62 150 34 128 34 92 C34 56 58 30 100 30 Z" fill={`url(#shade-${uid})`} stroke={furInk} strokeWidth={3.5} />
+          {/* her signature curl (hair accessories are worn on it) */}
+          <path d="M98 31 C90 20 96 8 106 10 C115 12 114 24 105 24 C100 24 100 18 104 18" fill="none" stroke={furInk} strokeWidth={3.4} strokeLinecap="round" />
           {accessory && ["headphones", "earmuffs"].includes(accessory.id) && <Accessory id={accessory.id} color={accColor} />}
           {/* face */}
           <motion.g animate={sleeping ? {} : blink} transition={{ duration: 4.2, repeat: Infinity, times: [0, 0.92, 0.95, 0.98, 1] }} style={{ originX: 0.5, originY: 0.5 }}>
             <Eyes mood={sleeping ? "sleepy" : mood} closed={sleeping} />
           </motion.g>
-          <ellipse cx="54" cy="110" rx="12" ry="7" fill="#FF8FB5" opacity={0.55} />
-          <ellipse cx="146" cy="110" rx="12" ry="7" fill="#FF8FB5" opacity={0.55} />
-          <ellipse cx="100" cy="104" rx="5" ry="3.6" fill="#FFC44D" stroke={INK} strokeWidth={2} />
+          <ellipse cx="56" cy="116" rx="11" ry="6.5" fill="#FF8FB5" opacity={0.55} />
+          <ellipse cx="144" cy="116" rx="11" ry="6.5" fill="#FF8FB5" opacity={0.55} />
+          {/* little heart nose */}
+          <path transform="translate(100 105) scale(0.42)" d="M0 6 C-6 -2 -16 2 -12 10 C-9 15 0 19 0 22 C0 19 9 15 12 10 C16 2 6 -2 0 6Z" fill="#FF7FA8" stroke={INK} strokeWidth={4.5} strokeLinejoin="round" />
           <Mouth mood={mood} anim={anim} />
-          <g stroke={furInk} strokeWidth={2.6} strokeLinecap="round">
-            <path d="M18 92 L40 96" /><path d="M16 106 L40 104" /><path d="M182 92 L160 96" /><path d="M184 106 L160 104" />
-          </g>
           {accessory && ["glasses_heart", "sunglasses"].includes(accessory.id) && <Accessory id={accessory.id} color={accColor} />}
           {!hatOn && <Bow kind={look.bow} color={look.bowColor} />}
           {accessory && hatOn && <Accessory id={accessory.id} color={accColor} />}

@@ -342,6 +342,26 @@ body::before {
   .no-scrollbar { scrollbar-width: none; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
 
+  /* Frosted background for the sticky top bar: content slides underneath, never behind the coins. */
+  .topbar-glass::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: color-mix(in oklab, var(--c-bg) 82%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.15);
+    backdrop-filter: blur(14px) saturate(1.15);
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 6px), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 6px), transparent);
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .topbar-glass::before {
+      background: var(--c-bg);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
   .pb-nav { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 24px); }
   @media (min-width: 1024px) { .pb-nav { padding-bottom: 48px; } }
 
