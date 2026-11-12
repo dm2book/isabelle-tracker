@@ -4,7 +4,11 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-Frame-Options", value: "DENY" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  // Camera and microphone: only the app itself may ask for them, never another site or an embedded frame.
+  // A per-page rule would not work here: the app changes screens without reloading, and browsers fix the
+  // policy when the page first loads. Which screens may use them is enforced in code (eslint.config.mjs),
+  // and the iPhone still asks Isabelle the first time. Location stays blocked everywhere.
+  { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=()" },
 ];
 
 const nextConfig: NextConfig = {
